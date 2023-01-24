@@ -1,25 +1,28 @@
 <html>
     <head>
-        <title>iPhonebook</title>
-        <!--<link rel="stylesheet" type="text/css" href="style.css">-->
-        <script src="client.js"></script>
+        <title>Twidder</title>
+        <link rel="stylesheet" type="text/css" href="client.css">
     </head>
     <body>
-        <form onsubmit="return false;">
+        <form id="signInForm" onsubmit="return false;">
             <div><label for="signInEmail">Email</label><input id="signInEmail" type="email" required></div>
-            <div><label  for="signInPassword">Password</label><input id="signInPassword" type="password" required minlength="6" maxlength="12"></div>
+            <div><label  for="signInPassword">Password</label><input id="signInPassword" type="password" required></div>
             <input id="signInSubmit" type="submit">
         </form>
-        <form onsubmit="validateSignUpCredentials(this);return false;">
+        <form id="signUpForm" onsubmit="return false;">
             <div><label for="firstName">First Name</label><input id="firstName" type="text" required></div>
             <div><label for="familyName">Family Name</label><input id="familyName" type="text" required></div>
             <div><label for="gender">Gender</label><input id="gender" type="text" required></div>
             <div><label for="city">City</label><input id="city" type="text" required></div>
             <div><label for="country">Country</label><input id="country" type="text" required></div>
             <div><label for="signUpEmail">E-mail</label><input id="signUpEmail" type="email" required></div>
-            <div><label for="SignUpPassword">Password</label><input id="signUpPassword" type="password" required required minlength="6" maxlength="12"></div>
-            <div><label for="repeatedSignUpPassword">Repeated PSW</label><input id="repeatedSignUpPassword" type="password" required required minlength="6" maxlength="12"></div>
+            <div><label for="SignUpPassword">Password</label><input id="signUpPassword" type="password" required></div>
+            <div><label for="repeatedSignUpPassword">Repeated PSW</label><input id="repeatedSignUpPassword" type="password" required></div>
             <input id="signUpSubmit" type="submit">
         </form>
+        <div id="incorrect-password-length-message" class="error-message">Incorrect password length</div>
+        <div id="different-passwords-message" class="error-message">Password and repeated password should be the same</div>
     </body>
+    <script src="FormHandler.js"></script>
+    <script src="client.js"></script>
 </html>
