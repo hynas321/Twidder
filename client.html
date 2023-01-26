@@ -4,12 +4,12 @@
         <link rel="stylesheet" type="text/css" href="client.css">
     </head>
     <body>
-        <form id="signInForm" onsubmit="return false;">
+        <form id="signInForm" onsubmit="validateSignInForm(this); return false;">
             <div><label for="signInEmail">Email</label><input id="signInEmail" type="email" required></div>
             <div><label  for="signInPassword">Password</label><input id="signInPassword" type="password" required></div>
             <input id="signInSubmit" type="submit">
         </form>
-        <form id="signUpForm" onsubmit="return false;">
+        <form id="signUpForm" onsubmit="validateSignUpForm(this); return false;">
             <div><label for="firstName">First Name</label><input id="firstName" type="text" required></div>
             <div><label for="familyName">Family Name</label><input id="familyName" type="text" required></div>
             <div><label for="gender">Gender</label><input id="gender" type="text" required></div>
