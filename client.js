@@ -8,6 +8,7 @@ const incorrectPasswordLengthMessageText =
     `Incorrect password length, allowed lengths: min = ${minPasswordLength} and max = ${maxPasswordLength}`;
 
 function validateSignInForm(formData) {
+    const emailString = formData.signInEmail.value;
     const passwordString = formData.signInPassword.value;
 
     if (!isPasswordLengthCorrect(passwordString)) {
@@ -17,7 +18,7 @@ function validateSignInForm(formData) {
         incorrectPasswordLengthMessage.style.display = elementHidden;
     }
     else {
-        //do something
+        console.log(serverstub.signIn(emailString, passwordString));
     }
 }
 
@@ -38,7 +39,7 @@ function validateSignUpForm(formData) {
         differentPasswordsMessage.style.display = elementHidden;
     }
     else {
-        //do something
+        console.log(signUp(formData));
     }
 }
 
@@ -53,5 +54,22 @@ function isPasswordLengthCorrect(passwordString) {
 function displayIncorrectPasswordLengthMessage() {
     incorrectPasswordLengthMessage.style.display = elementDisplayed;
     incorrectPasswordLengthMessage.textContent = incorrectPasswordLengthMessageText;
-       
+}
+
+function signUp(formData) {
+    const dataObject = {
+        email: formData.signUpEmail.value,
+        password: formData.signUpPassword.value,
+        firstname: formData.firstName.value,
+        familyname: formData.familyName.value,
+        gender: formData.gender.value,
+        city: formData.city.value,
+        country: formData.country.value
+    };
+
+    return serverstub.signUp(dataObject);
+}
+
+function signIn(emailString, passwordString) {
+    return serverstub.signIn(emailString, passwordString);
 }

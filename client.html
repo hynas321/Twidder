@@ -6,7 +6,7 @@
     <body>
         <form id="signInForm" onsubmit="validateSignInForm(this); return false;">
             <div><label for="signInEmail">Email</label><input id="signInEmail" type="email" required></div>
-            <div><label  for="signInPassword">Password</label><input id="signInPassword" type="password" required></div>
+            <div><label for="signInPassword">Password</label><input id="signInPassword" type="password" required></div>
             <input id="signInSubmit" type="submit">
         </form>
         <form id="signUpForm" onsubmit="validateSignUpForm(this); return false;">
@@ -23,6 +23,6 @@
         <div id="incorrect-password-length-message" class="error-message">Incorrect password length</div>
         <div id="different-passwords-message" class="error-message">Password and repeated password should be the same</div>
     </body>
-    <script src="FormHandler.js"></script>
+    <script src="serverstub.js"></script>
     <script src="client.js"></script>
 </html>
