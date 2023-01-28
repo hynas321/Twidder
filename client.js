@@ -1,11 +1,32 @@
-const incorrectPasswordLengthMessage = document.getElementById("incorrect-password-length-message");
-const differentPasswordsMessage = document.getElementById("different-passwords-message");
-const minPasswordLength = 6
-const maxPasswordLength = 12
+let errorMessageElement;
+let successMessageElement;
+
+const minPasswordLength = 6;
+const maxPasswordLength = 12;
 const elementDisplayed = "block";
 const elementHidden = "none";
-const incorrectPasswordLengthMessageText = 
+const differentPasswordsText = "Passwords are not the same";
+const incorrectPasswordLengthText = 
     `Incorrect password length, allowed lengths: min = ${minPasswordLength} and max = ${maxPasswordLength}`;
+
+window.addEventListener("load", function() {
+    const body = document.getElementById("body");
+    const welcomeView = document.getElementById("welcomeview");
+    const profileView = document.getElementById("profileview");
+
+    if (true) {
+        body.innerHTML = welcomeView.innerHTML;
+        errorMessageElement = this.document.getElementById("error-message");
+        successMessageElement = this.document.getElementById("success-message");
+    }
+    else {
+        body.innerHTML = profileView.innerHTML;
+    }
+});
+
+function displayView() {
+
+}
 
 function validateSignInForm(formData) {
     const emailString = formData.signInEmail.value;
@@ -13,13 +34,20 @@ function validateSignInForm(formData) {
 
     if (!isPasswordLengthCorrect(passwordString)) {
         displayIncorrectPasswordLengthMessage();
+        return;
     }
-    else if (incorrectPasswordLengthMessage.style.display === elementDisplayed) {
-        incorrectPasswordLengthMessage.style.display = elementHidden;
+
+    const signInServerOutputObj = serverstub.signIn(emailString, passwordString);
+    console.log(signInServerOutputObj);
+    
+    if (signInServerOutputObj.success === false) {
+        displayServerErrorMessage(signInServerOutputObj);
+        return;
     }
-    else {
-        console.log(serverstub.signIn(emailString, passwordString));
-    }
+    
+    displayServerSuccessMessage(signInServerOutputObj);
+
+    localStorage.setItem("token", signInServerOutputObj.data);
 }
 
 function validateSignUpForm(formData) {
@@ -27,20 +55,23 @@ function validateSignUpForm(formData) {
     const repeatedPasswordString = formData.repeatedSignUpPassword.value;
     
     if (!(passwordString === repeatedPasswordString)) {
-        differentPasswordsMessage.style.display = elementDisplayed;
+        differentPasswordsText.style.display = elementDisplayed;
+        return;
     }
     else if (!isPasswordLengthCorrect(passwordString) || !isPasswordLengthCorrect(repeatedPasswordString)) {
         displayIncorrectPasswordLengthMessage();
+        return;
     }
-    else if (incorrectPasswordLengthMessage.style.display === elementDisplayed 
-        || differentPasswordsMessage.style.display === elementDisplayed) {
 
-        incorrectPasswordLengthMessage.style.display = elementHidden;
-        differentPasswordsMessage.style.display = elementHidden;
+    const signUpServerOutputObj = signUp(formData);
+    console.log(signUpServerOutputObj);
+
+    if (signUpServerOutputObj.success === false) {
+        displayServerErrorMessage(signUpServerOutputObj);
+        return;
     }
-    else {
-        console.log(signUp(formData));
-    }
+
+    displayServerSuccessMessage(signUpServerOutputObj);
 }
 
 function isPasswordLengthCorrect(passwordString) {
@@ -52,8 +83,37 @@ function isPasswordLengthCorrect(passwordString) {
 }
 
 function displayIncorrectPasswordLengthMessage() {
-    incorrectPasswordLengthMessage.style.display = elementDisplayed;
-    incorrectPasswordLengthMessage.textContent = incorrectPasswordLengthMessageText;
+    hideAllMessages();
+    errorMessageElement.style.display = elementDisplayed;
+    errorMessageElement.textContent = incorrectPasswordLengthText;
+}
+
+function displayDifferentPasswordsMessage() {
+    hideAllMessages();
+    errorMessageElement.style.display = elementDisplayed;
+    errorMessageElement.textContent = differentPasswordsText;
+}
+
+function displayServerErrorMessage(serverOutputObj) {
+    hideAllMessages();
+    errorMessageElement.style.display = elementDisplayed;
+    errorMessageElement.textContent = serverOutputObj.message;
+}
+
+function displayServerSuccessMessage(serverOutputObj) {
+    hideAllMessages();
+    successMessageElement.style.display = elementDisplayed;
+    successMessageElement.textContent = serverOutputObj.message;
+}
+
+function hideAllMessages() {
+    if (errorMessageElement.style.display == elementDisplayed) {
+        errorMessageElement.style.display = elementHidden;
+    }
+
+    if (successMessageElement.style.display == elementDisplayed) {
+        errorMessageElement.style.display = elementHidden;
+    }
 }
 
 function signUp(formData) {
