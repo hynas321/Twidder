@@ -5,12 +5,12 @@
         <script src="client.js"></script>
         <script src="serverstub.js"></script>
         <script type="text/view" id="welcomeview">
-            <form id="signInForm" onsubmit="validateSignInForm(this); return false;">
+            <form id="sign-in-form" onsubmit="validateSignInForm(this); return false;">
                 <div><label for="signInEmail">Email</label><input id="signInEmail" type="email" required></div>
                 <div><label for="signInPassword">Password</label><input id="signInPassword" type="password" required></div>
-                <input id="signInSubmit" type="submit">
+                <input id="sign-in-submit" type="submit">
             </form>
-            <form id="signUpForm" onsubmit="validateSignUpForm(this); return false;">
+            <form id="sign-up-form" onsubmit="validateSignUpForm(this); return false;">
                 <div><label for="firstName">First Name</label><input id="firstName" type="text" required></div>
                 <div><label for="familyName">Family Name</label><input id="familyName" type="text" required></div>
                 <div><label for="gender">Gender</label><input id="gender" type="text" required></div>
@@ -19,13 +19,37 @@
                 <div><label for="signUpEmail">E-mail</label><input id="signUpEmail" type="email" required></div>
                 <div><label for="SignUpPassword">Password</label><input id="signUpPassword" type="password" required></div>
                 <div><label for="repeatedSignUpPassword">Repeated PSW</label><input id="repeatedSignUpPassword" type="password" required></div>
-                <input id="signUpSubmit" type="submit">
+                <input id="sign-up-submit" type="submit">
             </form>
             <div id="error-message" class="error-message">Error</div>
             <div id="success-message" class="success-message">Success</div>
         </script>
         <script type="text/view" id="profileview">
-            <text>Profile view!</text>
+            <div class="tabs">
+				<div class="tab-buttons">
+				    <button id="btn-home-tab" onclick="displayHomeTab()" class="btn-tab">Home</button>
+				    <button id="btn-account-tab" onclick="displayAccountTab()" class="btn-tab">Account</button>
+				    <button id="btn-browse-tab" onclick="displayBrowseTab()" class="btn-tab">Browse</button>
+					<button id="btn-sign-out"  onclick="signOut()" class="btn-tab">Sign out</button>
+				</div>
+				<div id="home-tab" class="tab">
+					<div id="personal-info">
+						<h2>Your account</h2>
+						<b>Email:</b><p id="email-value" class="fetched-info"></p><br>
+						<b>Name:</b><p id="firstname-value" class="fetched-info"></p><br>
+						<b>Family name:</b><p id="familyname-value" class="fetched-info"></p><br>
+						<b>Gender:</b><p id="gender-value" class="fetched-info"></p><br>
+						<b>City:</b><p id="city-value" class="fetched-info"></p><br>
+						<b>Country:</b><p id="country-value" class="fetched-info"></p><br>
+					</div>
+                </div>
+                <div id="browse-tab" class="tab">
+                    <text>Browse tab :)</text>
+                </div>
+                <div id="account-tab" class="tab">
+                    <text>Account tab :)</text>
+                </div>
+			</div>
         </script>
     </head>
     <body>

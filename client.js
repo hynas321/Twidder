@@ -1,31 +1,50 @@
 let errorMessageElement;
 let successMessageElement;
 
+let homeTab;
+let accountTab;
+let browseTab;
+
 const minPasswordLength = 6;
 const maxPasswordLength = 12;
+
 const elementDisplayed = "block";
 const elementHidden = "none";
+const tokenKey = "token";
 const differentPasswordsText = "Passwords are not the same";
 const incorrectPasswordLengthText = 
     `Incorrect password length, allowed lengths: min = ${minPasswordLength} and max = ${maxPasswordLength}`;
 
 window.addEventListener("load", function() {
-    const body = document.getElementById("body");
-    const welcomeView = document.getElementById("welcomeview");
-    const profileView = document.getElementById("profileview");
+    const tokenValue = this.localStorage.getItem(tokenKey);
 
-    if (true) {
-        body.innerHTML = welcomeView.innerHTML;
-        errorMessageElement = this.document.getElementById("error-message");
-        successMessageElement = this.document.getElementById("success-message");
+    if (typeof(tokenValue) != "string") {
+        displayWelcomeView();
     }
     else {
-        body.innerHTML = profileView.innerHTML;
+        displayProfileView(tokenValue);
     }
 });
 
-function displayView() {
+function displayWelcomeView() {
+    const body = document.getElementById("body");
+    const welcomeView = document.getElementById("welcomeview");
 
+    body.innerHTML = welcomeView.innerHTML;
+    errorMessageElement = document.getElementById("error-message");
+    successMessageElement = document.getElementById("success-message");
+}
+
+function displayProfileView(token) {
+    const body = document.getElementById("body");
+    const profileView = document.getElementById("profileview");
+
+    body.innerHTML = profileView.innerHTML;
+    homeTab = document.getElementById("home-tab");
+    accountTab = document.getElementById("account-tab");
+    browseTab = document.getElementById("browse-tab");
+    
+    displayHomeTab();
 }
 
 function validateSignInForm(formData) {
@@ -45,9 +64,8 @@ function validateSignInForm(formData) {
         return;
     }
     
-    displayServerSuccessMessage(signInServerOutputObj);
-
-    localStorage.setItem("token", signInServerOutputObj.data);
+    localStorage.setItem(tokenKey, signInServerOutputObj.data);
+    displayProfileView();
 }
 
 function validateSignUpForm(formData) {
@@ -132,4 +150,59 @@ function signUp(formData) {
 
 function signIn(emailString, passwordString) {
     return serverstub.signIn(emailString, passwordString);
+}
+
+function signOut() {
+    const tokenValue = this.localStorage.getItem(tokenKey);
+
+    console.log(serverstub.signOut(tokenValue));
+    localStorage.removeItem(tokenKey);
+    displayWelcomeView();
+}
+
+function displayHomeTab() {
+    hideTab();
+    homeTab.style.display = elementDisplayed;
+
+    const tokenValue = this.localStorage.getItem(tokenKey);
+    const userDataObject = serverstub.getUserDataByToken(tokenValue);
+
+    console.log(userDataObject);
+
+    const emailElement = document.getElementById("email-value");
+    const firstname = document.getElementById("firstname-value");
+    const familyName = document.getElementById("familyname-value");
+    const gender = document.getElementById("gender-value");
+    const city = document.getElementById("city-value");
+    const country = document.getElementById("country-value");
+
+    emailElement.textContent = userDataObject.data.email;
+    firstname.textContent = userDataObject.data.firstname;
+    familyName.textContent = userDataObject.data.familyname;
+    gender.textContent = userDataObject.data.gender;
+    city.textContent = userDataObject.data.city;
+    country.textContent = userDataObject.data.country;
+}
+
+function displayAccountTab() {
+    hideTab();
+    accountTab.style.display = elementDisplayed;
+
+}
+
+function displayBrowseTab() {
+    hideTab();
+    browseTab.style.display = elementDisplayed;
+}
+
+function hideTab() {
+    if (homeTab.style.display == elementDisplayed) {
+        homeTab.style.display = elementHidden;
+    }
+    else if (accountTab.style.display == elementDisplayed) {
+        accountTab.style.display = elementHidden;
+    }
+    else if (browseTab.style.display == elementDisplayed) {
+        browseTab.style.display = elementHidden;
+    }
 }

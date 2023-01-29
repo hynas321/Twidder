@@ -7,3 +7,12 @@
     color: green;
     display: none;
 }
+
+.fetched-info{
+    display: inline;
+    margin-left: 10px;
+}
+
+.tab{
+    display: none;
+}
