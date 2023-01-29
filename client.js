@@ -1,9 +1,13 @@
 let errorMessageElement;
 let successMessageElement;
+let accountTabErrorMessageElement;
+let accountTabSuccessMessageElement;
 
 let homeTab;
 let accountTab;
 let browseTab;
+
+let userDataObject;
 
 const minPasswordLength = 6;
 const maxPasswordLength = 12;
@@ -11,6 +15,7 @@ const maxPasswordLength = 12;
 const elementDisplayed = "block";
 const elementHidden = "none";
 const tokenKey = "token";
+
 const differentPasswordsText = "Passwords are not the same";
 const incorrectPasswordLengthText = 
     `Incorrect password length, allowed lengths: min = ${minPasswordLength} and max = ${maxPasswordLength}`;
@@ -35,7 +40,7 @@ function displayWelcomeView() {
     successMessageElement = document.getElementById("success-message");
 }
 
-function displayProfileView(token) {
+function displayProfileView() {
     const body = document.getElementById("body");
     const profileView = document.getElementById("profileview");
 
@@ -43,24 +48,37 @@ function displayProfileView(token) {
     homeTab = document.getElementById("home-tab");
     accountTab = document.getElementById("account-tab");
     browseTab = document.getElementById("browse-tab");
+
+    accountTabErrorMessageElement = document.getElementById("account-tab-error-message");
+    accountTabSuccessMessageElement = document.getElementById("account-tab-success-message");
     
     displayHomeTab();
 }
 
-function validateSignInForm(formData) {
-    const emailString = formData.signInEmail.value;
-    const passwordString = formData.signInPassword.value;
+function validateSignInForm(signInFormData) {
+    const emailString = signInFormData.signInEmail.value;
+    const passwordString = signInFormData.signInPassword.value;
 
     if (!isPasswordLengthCorrect(passwordString)) {
-        displayIncorrectPasswordLengthMessage();
+        displayMessage(
+            errorMessageElement,
+            incorrectPasswordLengthText,
+            clearWelcomeViewMessages
+        );
+
         return;
     }
 
     const signInServerOutputObj = serverstub.signIn(emailString, passwordString);
     console.log(signInServerOutputObj);
     
-    if (signInServerOutputObj.success === false) {
-        displayServerErrorMessage(signInServerOutputObj);
+    if (signInServerOutputObj.success == false) {
+        displayMessage(
+            errorMessageElement,
+            signInServerOutputObj.message,
+            clearWelcomeViewMessages
+        );
+
         return;
     }
     
@@ -68,28 +86,47 @@ function validateSignInForm(formData) {
     displayProfileView();
 }
 
-function validateSignUpForm(formData) {
-    const passwordString = formData.signUpPassword.value;
-    const repeatedPasswordString = formData.repeatedSignUpPassword.value;
+function validateSignUpForm(signUpFormData) {
+    const passwordString = signUpFormData.signUpPassword.value;
+    const repeatedPasswordString = signUpFormData.repeatedSignUpPassword.value;
     
-    if (!(passwordString === repeatedPasswordString)) {
-        differentPasswordsText.style.display = elementDisplayed;
+    if (!(passwordString == repeatedPasswordString)) {
+        displayMessage(
+            errorMessageElement,
+            differentPasswordsText,
+            clearWelcomeViewMessages
+        );
+
         return;
     }
     else if (!isPasswordLengthCorrect(passwordString) || !isPasswordLengthCorrect(repeatedPasswordString)) {
-        displayIncorrectPasswordLengthMessage();
+        displayMessage(
+            errorMessageElement,
+            incorrectPasswordLengthText,
+            clearWelcomeViewMessages
+        );
+
         return;
     }
 
-    const signUpServerOutputObj = signUp(formData);
+    const signUpServerOutputObj = signUp(signUpFormData);
     console.log(signUpServerOutputObj);
 
-    if (signUpServerOutputObj.success === false) {
-        displayServerErrorMessage(signUpServerOutputObj);
+    if (signUpServerOutputObj.success == false) {
+        displayMessage(
+            errorMessageElement,
+            signUpServerOutputObj.message,
+            clearWelcomeViewMessages
+        );
+
         return;
     }
 
-    displayServerSuccessMessage(signUpServerOutputObj);
+    displayMessage(
+        successMessageElement,
+        signUpServerOutputObj.message,
+        clearWelcomeViewMessages
+    );
 }
 
 function isPasswordLengthCorrect(passwordString) {
@@ -100,37 +137,29 @@ function isPasswordLengthCorrect(passwordString) {
     return true;
 }
 
-function displayIncorrectPasswordLengthMessage() {
-    hideAllMessages();
-    errorMessageElement.style.display = elementDisplayed;
-    errorMessageElement.textContent = incorrectPasswordLengthText;
+function displayMessage(element, message, hideMessagesFunction) {
+    hideMessagesFunction();
+    element.style.display = elementDisplayed;
+    element.textContent = message;
 }
 
-function displayDifferentPasswordsMessage() {
-    hideAllMessages();
-    errorMessageElement.style.display = elementDisplayed;
-    errorMessageElement.textContent = differentPasswordsText;
-}
-
-function displayServerErrorMessage(serverOutputObj) {
-    hideAllMessages();
-    errorMessageElement.style.display = elementDisplayed;
-    errorMessageElement.textContent = serverOutputObj.message;
-}
-
-function displayServerSuccessMessage(serverOutputObj) {
-    hideAllMessages();
-    successMessageElement.style.display = elementDisplayed;
-    successMessageElement.textContent = serverOutputObj.message;
-}
-
-function hideAllMessages() {
+function clearWelcomeViewMessages() {
     if (errorMessageElement.style.display == elementDisplayed) {
         errorMessageElement.style.display = elementHidden;
     }
 
     if (successMessageElement.style.display == elementDisplayed) {
         errorMessageElement.style.display = elementHidden;
+    }
+}
+
+function clearAccountTabMessages() {
+    if (accountTabErrorMessageElement.style.display == elementDisplayed) {
+        accountTabErrorMessageElement.style.display = elementHidden;
+    }
+
+    if (accountTabSuccessMessageElement.style.display == elementDisplayed) {
+        accountTabSuccessMessageElement.style.display = elementHidden;
     }
 }
 
@@ -157,7 +186,58 @@ function signOut() {
 
     console.log(serverstub.signOut(tokenValue));
     localStorage.removeItem(tokenKey);
+    userDataObject = null;
     displayWelcomeView();
+}
+
+function changePassword(changePasswordFormData) {
+    const tokenValue = this.localStorage.getItem(tokenKey);
+    const oldPassword = changePasswordFormData.oldPassword.value;
+    const newPassword = changePasswordFormData.newPassword.value; 
+    const repeatedNewPassword = changePasswordFormData.repeatedNewPassword.value;
+
+    if (!isPasswordLengthCorrect(oldPassword) ||
+        !isPasswordLengthCorrect(newPassword) ||
+        !isPasswordLengthCorrect(repeatedNewPassword)) {
+
+        displayMessage(
+            accountTabErrorMessageElement,
+            incorrectPasswordLengthText,
+            clearAccountTabMessages
+        );
+
+        return;
+    }
+
+    if (newPassword != repeatedNewPassword) {
+        
+        displayMessage(
+            accountTabErrorMessageElement,
+            differentPasswordsText,
+            clearAccountTabMessages
+        );
+
+        return;
+    }
+
+    const changePasswordServerOutputObj = serverstub.changePassword(tokenValue, oldPassword, newPassword);
+
+    console.log(changePasswordServerOutputObj);
+
+    if (changePasswordServerOutputObj.success) {
+        displayMessage(
+            accountTabSuccessMessageElement,
+            changePasswordServerOutputObj.message,
+            clearAccountTabMessages
+        );
+    }
+    else {
+        displayMessage(
+            accountTabErrorMessageElement,
+            changePasswordServerOutputObj.message,
+            clearAccountTabMessages
+        );
+    }
 }
 
 function displayHomeTab() {
@@ -165,9 +245,11 @@ function displayHomeTab() {
     homeTab.style.display = elementDisplayed;
 
     const tokenValue = this.localStorage.getItem(tokenKey);
-    const userDataObject = serverstub.getUserDataByToken(tokenValue);
 
-    console.log(userDataObject);
+    if (userDataObject == null) {
+        userDataObject = serverstub.getUserDataByToken(tokenValue);
+        console.log(userDataObject);
+    }
 
     const emailElement = document.getElementById("email-value");
     const firstname = document.getElementById("firstname-value");
@@ -196,13 +278,13 @@ function displayBrowseTab() {
 }
 
 function hideTab() {
-    if (homeTab.style.display == elementDisplayed) {
+    if (homeTab.style.display === elementDisplayed) {
         homeTab.style.display = elementHidden;
     }
-    else if (accountTab.style.display == elementDisplayed) {
+    else if (accountTab.style.display === elementDisplayed) {
         accountTab.style.display = elementHidden;
     }
-    else if (browseTab.style.display == elementDisplayed) {
+    else if (browseTab.style.display === elementDisplayed) {
         browseTab.style.display = elementHidden;
     }
 }

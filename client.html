@@ -8,7 +8,7 @@
             <form id="sign-in-form" onsubmit="validateSignInForm(this); return false;">
                 <div><label for="signInEmail">Email</label><input id="signInEmail" type="email" required></div>
                 <div><label for="signInPassword">Password</label><input id="signInPassword" type="password" required></div>
-                <input id="sign-in-submit" type="submit">
+                <input id="btn-sign-in" type="submit">
             </form>
             <form id="sign-up-form" onsubmit="validateSignUpForm(this); return false;">
                 <div><label for="firstName">First Name</label><input id="firstName" type="text" required></div>
@@ -19,7 +19,7 @@
                 <div><label for="signUpEmail">E-mail</label><input id="signUpEmail" type="email" required></div>
                 <div><label for="SignUpPassword">Password</label><input id="signUpPassword" type="password" required></div>
                 <div><label for="repeatedSignUpPassword">Repeated PSW</label><input id="repeatedSignUpPassword" type="password" required></div>
-                <input id="sign-up-submit" type="submit">
+                <input id="btn-sign-up" type="submit">
             </form>
             <div id="error-message" class="error-message">Error</div>
             <div id="success-message" class="success-message">Success</div>
@@ -30,11 +30,11 @@
 				    <button id="btn-home-tab" onclick="displayHomeTab()" class="btn-tab">Home</button>
 				    <button id="btn-account-tab" onclick="displayAccountTab()" class="btn-tab">Account</button>
 				    <button id="btn-browse-tab" onclick="displayBrowseTab()" class="btn-tab">Browse</button>
-					<button id="btn-sign-out"  onclick="signOut()" class="btn-tab">Sign out</button>
 				</div>
 				<div id="home-tab" class="tab">
 					<div id="personal-info">
-						<h2>Your account</h2>
+						<h2>Home tab</h2>
+                        <h3>Personal information</h3>
 						<b>Email:</b><p id="email-value" class="fetched-info"></p><br>
 						<b>Name:</b><p id="firstname-value" class="fetched-info"></p><br>
 						<b>Family name:</b><p id="familyname-value" class="fetched-info"></p><br>
@@ -47,7 +47,18 @@
                     <text>Browse tab :)</text>
                 </div>
                 <div id="account-tab" class="tab">
-                    <text>Account tab :)</text>
+                    <h2>Account tab</h2>
+                    <h3>Change password</h3>
+                    <form id="change-password-form" onsubmit="changePassword(this); return false;">
+                        <div><label for="oldPassword">Old password</label><input id="oldPassword" type="password" required></div>
+                        <div><label for="newPassword">New password</label><input id="newPassword" type="password" required></div>
+                        <div><label for="repeatedNewPassword">New password</label><input id="repeatedNewPassword" type="password" required></div>
+                        <input id="btn-change-password" type="submit">
+                    </form>
+                    <div id="account-tab-error-message" class="error-message">Error</div>
+                    <div id="account-tab-success-message" class="success-message">Success</div>
+                    <h3>Sign out</h3>
+                    <button id="btn-sign-out" onclick="signOut()" class="btn-tab">Sign out</button>
                 </div>
 			</div>
         </script>
