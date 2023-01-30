@@ -1,24 +1,15 @@
-let errorMessageElement;
-let successMessageElement;
-let accountTabErrorMessageElement;
-let accountTabSuccessMessageElement;
-let browseTabErrorMessageElement;
-
-let homeTab;
-let accountTab;
-let browseTab;
-
 let userDataObject;
 let homeTabMessagesArray;
-let browseTabMessagesArray;
 
 const minPasswordLength = 6;
 const maxPasswordLength = 12;
 
-const elementDisplayed = "block";
-const elementHidden = "none";
-const tokenKey = "token";
+const displayProperty = {
+    block: "block",
+    none: "none"
+};
 
+const tokenKey = "token";
 const differentPasswordsText = "Passwords are not the same";
 const incorrectPasswordLengthText = 
     `Incorrect password length, allowed lengths: min = ${minPasswordLength} and max = ${maxPasswordLength}`;
@@ -39,9 +30,6 @@ function displayWelcomeView() {
     const welcomeView = document.getElementById("welcomeview");
 
     body.innerHTML = welcomeView.innerHTML;
-    errorMessageElement = this.document.getElementById("error-message");
-    successMessageElement = this.document.getElementById("success-message");
-
 }
 
 function displayProfileView() {
@@ -49,16 +37,15 @@ function displayProfileView() {
     const profileView = document.getElementById("profileview");
 
     body.innerHTML = profileView.innerHTML;
-    homeTab = document.getElementById("home-tab");
-    accountTab = document.getElementById("account-tab");
-    browseTab = document.getElementById("browse-tab");
 
     displayHomeTab();
 }
 
 function displayHomeTab() {
-    hideTabs();
-    homeTab.style.display = elementDisplayed;
+    const homeTab = document.getElementById("home-tab");
+
+    hidePreviousTabs();
+    homeTab.style.display = displayProperty.block;
 
     const tokenValue = this.localStorage.getItem(tokenKey);
 
@@ -82,46 +69,54 @@ function displayHomeTab() {
     country.textContent = userDataObject.data.country;
 
     if (homeTabMessagesArray == undefined) {
-        displayUserMessages(tokenValue, userDataObject.data.email);
+        displayAccountMessages(tokenValue, userDataObject.data.email);
     }
 }
 
 function displayAccountTab() {
-    hideTabs();
-    accountTab.style.display = elementDisplayed;
-    accountTabErrorMessageElement = this.document.getElementById("account-tab-error-message");
-    accountTabSuccessMessageElement = this.document.getElementById("account-tab-success-message");
+    const accountTab = document.getElementById("account-tab");
+
+    hidePreviousTabs();
+    accountTab.style.display = displayProperty.block;
 }
 
 function displayBrowseTab() {
-    hideTabs();
-    browseTab.style.display = elementDisplayed;
-    browseTabErrorMessageElement = this.document.getElementById("browse-tab-error-message");
+    const browseTab = document.getElementById("browse-tab");
+
+    hidePreviousTabs();
+    browseTab.style.display = displayProperty.block;
 }
 
-function hideTabs() {
-    if (homeTab.style.display == elementDisplayed) {
-        homeTab.style.display = elementHidden;
+function hidePreviousTabs() {
+    const homeTab = document.getElementById("home-tab");
+
+    if (homeTab.style.display == displayProperty.block) {
+        homeTab.style.display = displayProperty.none;
+        return;
     }
-    else if (accountTab.style.display == elementDisplayed) {
-        accountTab.style.display = elementHidden;
+
+    const accountTab = document.getElementById("account-tab");
+
+    if (accountTab.style.display == displayProperty.block) {
+        accountTab.style.display = displayProperty.none;
+        return;
     }
-    else if (browseTab.style.display == elementDisplayed) {
-        browseTab.style.display = elementHidden;
+
+    const browseTab = document.getElementById("browse-tab");
+
+    if (browseTab.style.display == displayProperty.block) {
+        browseTab.style.display = displayProperty.none;
+        return;
     }
 }
 
 function validateSignInForm(signInFormData) {
     const emailString = signInFormData.signInEmail.value;
     const passwordString = signInFormData.signInPassword.value;
+    const errorStatusMessageElement = document.getElementById("error-status-message");
 
     if (!isPasswordLengthCorrect(passwordString)) {
-        displayMessage(
-            errorMessageElement,
-            incorrectPasswordLengthText,
-            clearWelcomeViewMessages
-        );
-
+        displayStatusMessage(errorStatusMessageElement, incorrectPasswordLengthText);
         return;
     }
 
@@ -129,12 +124,7 @@ function validateSignInForm(signInFormData) {
     console.log(signInServerOutputObj);
     
     if (signInServerOutputObj.success == false) {
-        displayMessage(
-            errorMessageElement,
-            signInServerOutputObj.message,
-            clearWelcomeViewMessages
-        );
-
+        displayStatusMessage(errorStatusMessageElement, signInServerOutputObj.message);
         return;
     }
     
@@ -145,23 +135,14 @@ function validateSignInForm(signInFormData) {
 function validateSignUpForm(signUpFormData) {
     const passwordString = signUpFormData.signUpPassword.value;
     const repeatedPasswordString = signUpFormData.repeatedSignUpPassword.value;
-    
-    if (!(passwordString == repeatedPasswordString)) {
-        displayMessage(
-            errorMessageElement,
-            differentPasswordsText,
-            clearWelcomeViewMessages
-        );
+    const errorStatusMessageElement = document.getElementById("error-status-message");
 
+    if (!(passwordString == repeatedPasswordString)) {
+        displayStatusMessage(errorStatusMessageElement, differentPasswordsText);
         return;
     }
     else if (!isPasswordLengthCorrect(passwordString) || !isPasswordLengthCorrect(repeatedPasswordString)) {
-        displayMessage(
-            errorMessageElement,
-            incorrectPasswordLengthText,
-            clearWelcomeViewMessages
-        );
-
+        displayStatusMessage(errorStatusMessageElement, incorrectPasswordLengthText);
         return;
     }
 
@@ -169,20 +150,11 @@ function validateSignUpForm(signUpFormData) {
     console.log(signUpServerOutputObj);
 
     if (signUpServerOutputObj.success == false) {
-        displayMessage(
-            errorMessageElement,
-            signUpServerOutputObj.message,
-            clearWelcomeViewMessages
-        );
-
+        displayStatusMessage(errorStatusMessageElement,signUpServerOutputObj.message);
         return;
     }
 
-    displayMessage(
-        successMessageElement,
-        signUpServerOutputObj.message,
-        clearWelcomeViewMessages
-    );
+    displayProfileView();
 }
 
 function isPasswordLengthCorrect(passwordString) {
@@ -193,50 +165,39 @@ function isPasswordLengthCorrect(passwordString) {
     return true;
 }
 
-function displayMessage(element, message, hideMessagesFunction) {
-    hideMessagesFunction();
-    element.style.display = elementDisplayed;
-    element.textContent = message;
+function displayStatusMessage(statusMessageElement, statusMessage) {
+    statusMessageElement.style.display = displayProperty.block;
+    statusMessageElement.textContent = statusMessage;
 }
 
-function clearWelcomeViewMessages() {
-    if (errorMessageElement.style.display == elementDisplayed) {
-        errorMessageElement.style.display = elementHidden;
-    }
-
-    if (successMessageElement.style.display == elementDisplayed) {
-        errorMessageElement.style.display = elementHidden;
+function hidePreviousStatusMessage(statusMessageElement) {
+    if (statusMessageElement.style.display == displayProperty.block) {
+        statusMessageElement.style.display = displayProperty.none;
     }
 }
 
-function clearAccountTabMessages() {
-    if (accountTabErrorMessageElement.style.display == elementDisplayed) {
-        accountTabErrorMessageElement.style.display = elementHidden;
+function hidePreviousStatusMessages(statusMessageElement1, statusMessageElement2) {
+    if (statusMessageElement1.style.display == displayProperty.block) {
+        statusMessageElement1.style.display = displayProperty.none;
     }
 
-    if (accountTabSuccessMessageElement.style.display == elementDisplayed) {
-        accountTabSuccessMessageElement.style.display = elementHidden;
-    }
-}
-
-function clearBrowseTabMessages() {
-    if (browseTabErrorMessageElement.style.display == elementDisplayed) {
-        browseTabErrorMessageElement.style.display = elementHidden;
+    if (statusMessageElement2.style.display == displayProperty.block) {
+        statusMessageElement2.style.display = displayProperty.none;
     }
 }
 
-function signUp(formData) {
-    const dataObject = {
-        email: formData.signUpEmail.value,
-        password: formData.signUpPassword.value,
-        firstname: formData.firstName.value,
-        familyname: formData.familyName.value,
-        gender: formData.gender.value,
-        city: formData.city.value,
-        country: formData.country.value
+function signUp(signUpFormData) {
+    const userDataObject = {
+        email: signUpFormData.signUpEmail.value,
+        password: signUpFormData.signUpPassword.value,
+        firstname: signUpFormData.firstName.value,
+        familyname: signUpFormData.familyName.value,
+        gender: signUpFormData.gender.value,
+        city: signUpFormData.city.value,
+        country: signUpFormData.country.value
     };
 
-    return serverstub.signUp(dataObject);
+    return serverstub.signUp(userDataObject);
 }
 
 function signIn(emailString, passwordString) {
@@ -249,6 +210,7 @@ function signOut() {
     console.log(serverstub.signOut(tokenValue));
     localStorage.removeItem(tokenKey);
     userDataObject = undefined;
+
     displayWelcomeView();
 }
 
@@ -257,28 +219,21 @@ function changePassword(changePasswordFormData) {
     const oldPassword = changePasswordFormData.oldPassword.value;
     const newPassword = changePasswordFormData.newPassword.value; 
     const repeatedNewPassword = changePasswordFormData.repeatedNewPassword.value;
+    const accountTabErrorStatusMessageElement = document.getElementById("account-tab-error-status-message");
+    const accountTabSuccessStatusMessageElement = document.getElementById("account-tab-success-status-message");
 
     if (!isPasswordLengthCorrect(oldPassword) ||
         !isPasswordLengthCorrect(newPassword) ||
         !isPasswordLengthCorrect(repeatedNewPassword)) {
 
-        displayMessage(
-            accountTabErrorMessageElement,
-            incorrectPasswordLengthText,
-            clearAccountTabMessages
-        );
-
+        hidePreviousStatusMessages(accountTabErrorStatusMessageElement, accountTabSuccessStatusMessageElement);
+        displayStatusMessage(accountTabErrorStatusMessageElement, incorrectPasswordLengthText);
         return;
     }
 
     if (newPassword != repeatedNewPassword) {
-        
-        displayMessage(
-            accountTabErrorMessageElement,
-            differentPasswordsText,
-            clearAccountTabMessages
-        );
-
+        hidePreviousStatusMessages(accountTabErrorStatusMessageElement, accountTabSuccessStatusMessageElement);
+        displayStatusMessage(accountTabErrorStatusMessageElement, differentPasswordsText);
         return;
     }
 
@@ -287,18 +242,13 @@ function changePassword(changePasswordFormData) {
     console.log(changePasswordServerOutputObj);
 
     if (changePasswordServerOutputObj.success) {
-        displayMessage(
-            accountTabSuccessMessageElement,
-            changePasswordServerOutputObj.message,
-            clearAccountTabMessages
-        );
+        hidePreviousStatusMessages(accountTabErrorStatusMessageElement, accountTabSuccessStatusMessageElement);
+        displayStatusMessage(accountTabSuccessStatusMessageElement, changePasswordServerOutputObj.message);
+        return;
     }
     else {
-        displayMessage(
-            accountTabErrorMessageElement,
-            changePasswordServerOutputObj.message,
-            clearAccountTabMessages
-        );
+        hidePreviousStatusMessages(accountTabErrorStatusMessageElement, accountTabSuccessStatusMessageElement);
+        displayStatusMessage(accountTabErrorStatusMessageElement, changePasswordServerOutputObj.message);
     }
 }
 
@@ -317,6 +267,7 @@ function postMessage() {
     }
     else {
         const firstElement = document.getElementById("message-0");
+        
         serverstub.postMessage(tokenValue, textArea.value, email);
         postWall.insertBefore(textDiv, firstElement);
     }
@@ -324,7 +275,7 @@ function postMessage() {
     textArea.value = "";
 }
 
-function displayUserMessages(tokenValue, userEmail) {
+function displayAccountMessages(tokenValue, userEmail) {
     homeTabMessagesArray = serverstub.getUserMessagesByEmail(tokenValue, userEmail).data;
     console.log(homeTabMessagesArray);
 
@@ -339,24 +290,27 @@ function displayUserMessages(tokenValue, userEmail) {
     }
 }
 
-function displayBrowsedUserProfile(browseFormDataObject) {
+function displaySearchedUserProfile(browseFormDataObject) {
     const tokenValue = this.localStorage.getItem(tokenKey);
-    const inputEmail = browseFormDataObject.browsedEmail.value;
+    const inputEmail = browseFormDataObject.searchedEmail.value;
+    const embeddedTab = document.getElementById("embedded-tab");
+    const browseTabErrorStatusMessageElement = document.getElementById("browse-tab-error-status-message");
 
     const getUserDataByEmailOutputObj = serverstub.getUserDataByEmail(tokenValue, inputEmail);
     console.log(getUserDataByEmailOutputObj);
 
     if (getUserDataByEmailOutputObj.success == false) {
-        
+        embeddedTab.style.display = displayProperty.none;
+        displayStatusMessage(browseTabErrorStatusMessageElement, getUserDataByEmailOutputObj.message);
         return;
     }
 
-    const email = document.getElementById("browsed-email-value");
-    const firstname = document.getElementById("browsed-firstname-value");
-    const familyName = document.getElementById("browsed-familyname-value");
-    const gender = document.getElementById("browsed-gender-value");
-    const city = document.getElementById("browsed-city-value");
-    const country = document.getElementById("browsed-country-value");
+    const email = document.getElementById("searched-email-value");
+    const firstname = document.getElementById("searched-firstname-value");
+    const familyName = document.getElementById("searched-familyname-value");
+    const gender = document.getElementById("searched-gender-value");
+    const city = document.getElementById("searched-city-value");
+    const country = document.getElementById("searched-country-value");
     
     email.textContent = getUserDataByEmailOutputObj.data.email;
     firstname.textContent = getUserDataByEmailOutputObj.data.firstname;
@@ -364,4 +318,22 @@ function displayBrowsedUserProfile(browseFormDataObject) {
     gender.textContent = getUserDataByEmailOutputObj.data.gender;
     city.textContent = getUserDataByEmailOutputObj.data.city;
     country.textContent = getUserDataByEmailOutputObj.data.country;
+
+    embeddedTab.style.display = displayProperty.block;
+
+    const postWall = document.getElementById("browse-post-wall");
+
+    for (let i = 0; i < homeTabMessagesArray.length; i++) {
+        const textDiv = document.createElement("div");
+
+        textDiv.setAttribute("id", `message-${i}`)
+        textDiv.innerHTML = homeTabMessagesArray[i].content;
+        postWall.appendChild(textDiv);
+    }
+
+    hidePreviousStatusMessage(browseTabErrorStatusMessageElement);
+}
+
+function removeMessageNodes() {
+    
 }

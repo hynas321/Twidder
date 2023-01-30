@@ -25,8 +25,7 @@
                     </div>
                     <input id="btn-sign-up" type="submit">
                 </form>
-            <div id="error-message" class="error-message">Error</div>
-            <div id="success-message" class="success-message">Success</div>
+            <div id="error-status-message" class="error-message">Error</div>
         </script>
         <script type="text/view" id="profileview">
             <div class="tabs">
@@ -55,24 +54,27 @@
                     </div>
                 </div>
                 <div id="browse-tab" class="tab">
-                    <form id="browse-user-account" onsubmit="displayBrowsedUserProfile(this); return false;">
+                    <form id="browse-user-account" onsubmit="displaySearchedUserProfile(this); return false;">
                         <h2>Browse tab</h2>
-                        <h3>Browse user's messages</h3>
-                        <div><label for="browsedEmail">Email</label><input id="browsedEmail" type="email" required></div>
+                        <h3>Searched user's messages</h3>
+                        <div><label for="searchedEmail">Email</label><input id="searchedEmail" type="email" required></div>
                         <input id="btn-browse-messages" type="submit">
                     </form>
-                    <div id="embedded-personal-info">
-                        <div id="browsed-personal-info">
-                            <h3>Personal information</h3>
-                            <b>Email:</b><p id="browsed-email-value" class="fetched-info"></p><br>
-                            <b>Name:</b><p id="browsed-firstname-value" class="fetched-info"></p><br>
-                            <b>Family name:</b><p id="browsed-familyname-value" class="fetched-info"></p><br>
-                            <b>Gender:</b><p id="browsed-gender-value" class="fetched-info"></p><br>
-                            <b>City:</b><p id="browsed-city-value" class="fetched-info"></p><br>
-                            <b>Country:</b><p id="browsed-country-value" class="fetched-info"></p><br>
+                    <div id="embedded-tab" class="embedded-tab">
+                        <div id="embedded-personal-info">
+                            <div id="searched-personal-info">
+                                <h3>Personal information</h3>
+                                <b>Email:</b><p id="searched-email-value" class="fetched-info"></p><br>
+                                <b>Name:</b><p id="searched-firstname-value" class="fetched-info"></p><br>
+                                <b>Family name:</b><p id="searched-familyname-value" class="fetched-info"></p><br>
+                                <b>Gender:</b><p id="searched-gender-value" class="fetched-info"></p><br>
+                                <b>City:</b><p id="searched-city-value" class="fetched-info"></p><br>
+                                <b>Country:</b><p id="searched-country-value" class="fetched-info"></p><br>
+                            </div>
                         </div>
+                        <div id="browse-post-wall"></div>
                     </div>
-                    <div id="browse-tab-error-message" class="error-message">Error</div>
+                    <div id="browse-tab-error-status-message" class="error-message">Error</div>
                 </div>
                 <div id="account-tab" class="tab">
                     <h2>Account tab</h2>
@@ -83,8 +85,8 @@
                         <div><label for="repeatedNewPassword">New password</label><input id="repeatedNewPassword" type="password" required></div>
                         <input id="btn-change-password" type="submit">
                     </form>
-                    <div id="account-tab-error-message" class="error-message">Error</div>
-                    <div id="account-tab-success-message" class="success-message">Success</div>
+                    <div id="account-tab-error-status-message" class="error-message">Error</div>
+                    <div id="account-tab-success-status-message" class="success-message">Success</div>
                     <h3>Sign out</h3>
                     <button id="btn-sign-out" onclick="signOut()" class="btn-tab">Sign out</button>
                 </div>
