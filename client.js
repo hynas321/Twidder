@@ -8,6 +8,8 @@ let accountTab;
 let browseTab;
 
 let userDataObject;
+let homeTabMessagesArray;
+let browseTabMessagesArray;
 
 const minPasswordLength = 6;
 const maxPasswordLength = 12;
@@ -186,7 +188,7 @@ function signOut() {
 
     console.log(serverstub.signOut(tokenValue));
     localStorage.removeItem(tokenKey);
-    userDataObject = null;
+    userDataObject = undefined;
     displayWelcomeView();
 }
 
@@ -240,30 +242,71 @@ function changePassword(changePasswordFormData) {
     }
 }
 
+function postMessage() {
+    const tokenValue = localStorage.getItem(tokenKey);
+    const textArea = document.getElementById("text-area");
+    const postWall = document.getElementById("post-wall");
+    const textDiv = document.createElement("div");
+    const email = userDataObject.email;
+
+    textDiv.innerHTML = textArea.value;
+
+    if (userDataObject == undefined || userDataObject.length == 0) {
+        serverstub.postMessage(tokenValue, textArea.value, email);
+        postWall.appendChild(textDiv);
+    }
+    else {
+        const firstElement = document.getElementById("message-0");
+        serverstub.postMessage(tokenValue, textArea.value, email);
+        postWall.insertBefore(textDiv, firstElement);
+    }
+
+    textArea.value = "";
+}
+
+function displayUserMessages(tokenValue, userEmail) {
+    homeTabMessagesArray = serverstub.getUserMessagesByEmail(tokenValue, userEmail).data;
+    console.log(homeTabMessagesArray);
+
+    const postWall = document.getElementById("post-wall");
+
+    for (let i = 0; i < homeTabMessagesArray.length; i++) {
+        const textDiv = document.createElement("div");
+
+        textDiv.setAttribute("id", `message-${i}`)
+        textDiv.innerHTML = homeTabMessagesArray[i].content;
+        postWall.appendChild(textDiv);
+    }
+}
+
 function displayHomeTab() {
     hideTab();
     homeTab.style.display = elementDisplayed;
 
     const tokenValue = this.localStorage.getItem(tokenKey);
 
-    if (userDataObject == null) {
+    if (userDataObject == undefined) {
         userDataObject = serverstub.getUserDataByToken(tokenValue);
         console.log(userDataObject);
     }
 
-    const emailElement = document.getElementById("email-value");
+    const email = document.getElementById("email-value");
     const firstname = document.getElementById("firstname-value");
     const familyName = document.getElementById("familyname-value");
     const gender = document.getElementById("gender-value");
     const city = document.getElementById("city-value");
     const country = document.getElementById("country-value");
 
-    emailElement.textContent = userDataObject.data.email;
+    email.textContent = userDataObject.data.email;
     firstname.textContent = userDataObject.data.firstname;
     familyName.textContent = userDataObject.data.familyname;
     gender.textContent = userDataObject.data.gender;
     city.textContent = userDataObject.data.city;
     country.textContent = userDataObject.data.country;
+
+    if (homeTabMessagesArray == undefined) {
+        displayUserMessages(tokenValue, userDataObject.data.email);
+    }
 }
 
 function displayAccountTab() {

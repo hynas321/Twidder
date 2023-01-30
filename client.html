@@ -42,8 +42,21 @@
 						<b>City:</b><p id="city-value" class="fetched-info"></p><br>
 						<b>Country:</b><p id="country-value" class="fetched-info"></p><br>
 					</div>
+                    <h3>Post a new message</h3>
+                    <div id="post-message">
+                        <textarea id="text-area"></textArea><br>
+                        <button id="btn-post" onclick="postMessage();">Post</button>
+                    </div>
+                    <div id="post-wall">
+                    </div>
                 </div>
                 <div id="browse-tab" class="tab">
+                    <form id="browse-messages-form">
+                        <h2>Browse tab</h2>
+                        <h3>Browse user's messages</h3>
+                        <div><label for="browsedEmail">Email</label><input id="browsedEmail" type="email" required></div>
+                        <input id="btn-browse-messages" type="submit">
+                    </form>
                     <text>Browse tab :)</text>
                 </div>
                 <div id="account-tab" class="tab">
