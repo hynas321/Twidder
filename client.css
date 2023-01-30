@@ -16,3 +16,16 @@
 .tab{
     display: none;
 }
+
+.embedded-tab{
+    display: none;
+}
+
+.form-container {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+}
+
+.form-input-button {
+    float: right;
+}

@@ -2,6 +2,7 @@ let errorMessageElement;
 let successMessageElement;
 let accountTabErrorMessageElement;
 let accountTabSuccessMessageElement;
+let browseTabErrorMessageElement;
 
 let homeTab;
 let accountTab;
@@ -38,8 +39,9 @@ function displayWelcomeView() {
     const welcomeView = document.getElementById("welcomeview");
 
     body.innerHTML = welcomeView.innerHTML;
-    errorMessageElement = document.getElementById("error-message");
-    successMessageElement = document.getElementById("success-message");
+    errorMessageElement = this.document.getElementById("error-message");
+    successMessageElement = this.document.getElementById("success-message");
+
 }
 
 function displayProfileView() {
@@ -51,10 +53,62 @@ function displayProfileView() {
     accountTab = document.getElementById("account-tab");
     browseTab = document.getElementById("browse-tab");
 
-    accountTabErrorMessageElement = document.getElementById("account-tab-error-message");
-    accountTabSuccessMessageElement = document.getElementById("account-tab-success-message");
-    
     displayHomeTab();
+}
+
+function displayHomeTab() {
+    hideTabs();
+    homeTab.style.display = elementDisplayed;
+
+    const tokenValue = this.localStorage.getItem(tokenKey);
+
+    if (userDataObject == undefined) {
+        userDataObject = serverstub.getUserDataByToken(tokenValue);
+        console.log(userDataObject);
+    }
+
+    const email = document.getElementById("email-value");
+    const firstname = document.getElementById("firstname-value");
+    const familyName = document.getElementById("familyname-value");
+    const gender = document.getElementById("gender-value");
+    const city = document.getElementById("city-value");
+    const country = document.getElementById("country-value");
+
+    email.textContent = userDataObject.data.email;
+    firstname.textContent = userDataObject.data.firstname;
+    familyName.textContent = userDataObject.data.familyname;
+    gender.textContent = userDataObject.data.gender;
+    city.textContent = userDataObject.data.city;
+    country.textContent = userDataObject.data.country;
+
+    if (homeTabMessagesArray == undefined) {
+        displayUserMessages(tokenValue, userDataObject.data.email);
+    }
+}
+
+function displayAccountTab() {
+    hideTabs();
+    accountTab.style.display = elementDisplayed;
+    accountTabErrorMessageElement = this.document.getElementById("account-tab-error-message");
+    accountTabSuccessMessageElement = this.document.getElementById("account-tab-success-message");
+}
+
+function displayBrowseTab() {
+    hideTabs();
+    browseTab.style.display = elementDisplayed;
+    browseTabErrorMessageElement = this.document.getElementById("browse-tab-error-message");
+}
+
+function hideTabs() {
+    if (homeTab.style.display == elementDisplayed) {
+        homeTab.style.display = elementHidden;
+    }
+    else if (accountTab.style.display == elementDisplayed) {
+        accountTab.style.display = elementHidden;
+    }
+    else if (browseTab.style.display == elementDisplayed) {
+        browseTab.style.display = elementHidden;
+    }
 }
 
 function validateSignInForm(signInFormData) {
@@ -162,6 +216,12 @@ function clearAccountTabMessages() {
 
     if (accountTabSuccessMessageElement.style.display == elementDisplayed) {
         accountTabSuccessMessageElement.style.display = elementHidden;
+    }
+}
+
+function clearBrowseTabMessages() {
+    if (browseTabErrorMessageElement.style.display == elementDisplayed) {
+        browseTabErrorMessageElement.style.display = elementHidden;
     }
 }
 
@@ -279,55 +339,29 @@ function displayUserMessages(tokenValue, userEmail) {
     }
 }
 
-function displayHomeTab() {
-    hideTab();
-    homeTab.style.display = elementDisplayed;
-
+function displayBrowsedUserProfile(browseFormDataObject) {
     const tokenValue = this.localStorage.getItem(tokenKey);
+    const inputEmail = browseFormDataObject.browsedEmail.value;
 
-    if (userDataObject == undefined) {
-        userDataObject = serverstub.getUserDataByToken(tokenValue);
-        console.log(userDataObject);
+    const getUserDataByEmailOutputObj = serverstub.getUserDataByEmail(tokenValue, inputEmail);
+    console.log(getUserDataByEmailOutputObj);
+
+    if (getUserDataByEmailOutputObj.success == false) {
+        
+        return;
     }
 
-    const email = document.getElementById("email-value");
-    const firstname = document.getElementById("firstname-value");
-    const familyName = document.getElementById("familyname-value");
-    const gender = document.getElementById("gender-value");
-    const city = document.getElementById("city-value");
-    const country = document.getElementById("country-value");
-
-    email.textContent = userDataObject.data.email;
-    firstname.textContent = userDataObject.data.firstname;
-    familyName.textContent = userDataObject.data.familyname;
-    gender.textContent = userDataObject.data.gender;
-    city.textContent = userDataObject.data.city;
-    country.textContent = userDataObject.data.country;
-
-    if (homeTabMessagesArray == undefined) {
-        displayUserMessages(tokenValue, userDataObject.data.email);
-    }
-}
-
-function displayAccountTab() {
-    hideTab();
-    accountTab.style.display = elementDisplayed;
-
-}
-
-function displayBrowseTab() {
-    hideTab();
-    browseTab.style.display = elementDisplayed;
-}
-
-function hideTab() {
-    if (homeTab.style.display === elementDisplayed) {
-        homeTab.style.display = elementHidden;
-    }
-    else if (accountTab.style.display === elementDisplayed) {
-        accountTab.style.display = elementHidden;
-    }
-    else if (browseTab.style.display === elementDisplayed) {
-        browseTab.style.display = elementHidden;
-    }
+    const email = document.getElementById("browsed-email-value");
+    const firstname = document.getElementById("browsed-firstname-value");
+    const familyName = document.getElementById("browsed-familyname-value");
+    const gender = document.getElementById("browsed-gender-value");
+    const city = document.getElementById("browsed-city-value");
+    const country = document.getElementById("browsed-country-value");
+    
+    email.textContent = getUserDataByEmailOutputObj.data.email;
+    firstname.textContent = getUserDataByEmailOutputObj.data.firstname;
+    familyName.textContent = getUserDataByEmailOutputObj.data.familyname;
+    gender.textContent = getUserDataByEmailOutputObj.data.gender;
+    city.textContent = getUserDataByEmailOutputObj.data.city;
+    country.textContent = getUserDataByEmailOutputObj.data.country;
 }
