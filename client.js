@@ -113,10 +113,15 @@ function hidePreviousTabs() {
 function validateSignInForm(signInFormData) {
     const emailString = signInFormData.signInEmail.value;
     const passwordString = signInFormData.signInPassword.value;
-    const errorStatusMessageElement = document.getElementById("error-status-message");
+    const statusMessageElement = document.getElementById("status-message");
 
     if (!isPasswordLengthCorrect(passwordString)) {
-        displayStatusMessage(errorStatusMessageElement, incorrectPasswordLengthText);
+        displayStatusMessage(
+            statusMessageElement,
+            incorrectPasswordLengthText,
+            false
+        );
+
         return;
     }
 
@@ -124,7 +129,12 @@ function validateSignInForm(signInFormData) {
     console.log(signInServerOutputObj);
     
     if (signInServerOutputObj.success == false) {
-        displayStatusMessage(errorStatusMessageElement, signInServerOutputObj.message);
+        displayStatusMessage(
+            statusMessageElement,
+            signInServerOutputObj.message,
+            false
+        );
+
         return;
     }
     
@@ -135,14 +145,24 @@ function validateSignInForm(signInFormData) {
 function validateSignUpForm(signUpFormData) {
     const passwordString = signUpFormData.signUpPassword.value;
     const repeatedPasswordString = signUpFormData.repeatedSignUpPassword.value;
-    const errorStatusMessageElement = document.getElementById("error-status-message");
+    const statusMessageElement = document.getElementById("status-message");
 
     if (!(passwordString == repeatedPasswordString)) {
-        displayStatusMessage(errorStatusMessageElement, differentPasswordsText);
+        displayStatusMessage(
+            statusMessageElement,
+            differentPasswordsText,
+            false
+        );
+
         return;
     }
     else if (!isPasswordLengthCorrect(passwordString) || !isPasswordLengthCorrect(repeatedPasswordString)) {
-        displayStatusMessage(errorStatusMessageElement, incorrectPasswordLengthText);
+        displayStatusMessage(
+            statusMessageElement,
+            incorrectPasswordLengthText,
+            false
+        );
+
         return;
     }
 
@@ -150,7 +170,12 @@ function validateSignUpForm(signUpFormData) {
     console.log(signUpServerOutputObj);
 
     if (signUpServerOutputObj.success == false) {
-        displayStatusMessage(errorStatusMessageElement,signUpServerOutputObj.message);
+        displayStatusMessage(
+            statusMessageElement,
+            signUpServerOutputObj.message,
+            false
+        );
+        
         return;
     }
 
@@ -165,25 +190,16 @@ function isPasswordLengthCorrect(passwordString) {
     return true;
 }
 
-function displayStatusMessage(statusMessageElement, statusMessage) {
+function displayStatusMessage(statusMessageElement, statusMessage, success) {
+    if (success) {
+        statusMessageElement.classList.replace("error-message", "success-message");
+    }
+    else {
+        statusMessageElement.classList.replace("success-message", "error-message");
+    }
+
     statusMessageElement.style.display = displayProperty.block;
     statusMessageElement.textContent = statusMessage;
-}
-
-function hidePreviousStatusMessage(statusMessageElement) {
-    if (statusMessageElement.style.display == displayProperty.block) {
-        statusMessageElement.style.display = displayProperty.none;
-    }
-}
-
-function hidePreviousStatusMessages(statusMessageElement1, statusMessageElement2) {
-    if (statusMessageElement1.style.display == displayProperty.block) {
-        statusMessageElement1.style.display = displayProperty.none;
-    }
-
-    if (statusMessageElement2.style.display == displayProperty.block) {
-        statusMessageElement2.style.display = displayProperty.none;
-    }
 }
 
 function signUp(signUpFormData) {
@@ -219,21 +235,28 @@ function changePassword(changePasswordFormData) {
     const oldPassword = changePasswordFormData.oldPassword.value;
     const newPassword = changePasswordFormData.newPassword.value; 
     const repeatedNewPassword = changePasswordFormData.repeatedNewPassword.value;
-    const accountTabErrorStatusMessageElement = document.getElementById("account-tab-error-status-message");
-    const accountTabSuccessStatusMessageElement = document.getElementById("account-tab-success-status-message");
+    const accountTabStatusMessageElement = document.getElementById("account-tab-status-message");
 
     if (!isPasswordLengthCorrect(oldPassword) ||
         !isPasswordLengthCorrect(newPassword) ||
         !isPasswordLengthCorrect(repeatedNewPassword)) {
 
-        hidePreviousStatusMessages(accountTabErrorStatusMessageElement, accountTabSuccessStatusMessageElement);
-        displayStatusMessage(accountTabErrorStatusMessageElement, incorrectPasswordLengthText);
+        displayStatusMessage(
+            accountTabStatusMessageElement,
+            incorrectPasswordLengthText,
+            false
+        );
+
         return;
     }
 
     if (newPassword != repeatedNewPassword) {
-        hidePreviousStatusMessages(accountTabErrorStatusMessageElement, accountTabSuccessStatusMessageElement);
-        displayStatusMessage(accountTabErrorStatusMessageElement, differentPasswordsText);
+        displayStatusMessage(
+            accountTabStatusMessageElement,
+            differentPasswordsText,
+            false
+        );
+
         return;
     }
 
@@ -242,13 +265,20 @@ function changePassword(changePasswordFormData) {
     console.log(changePasswordServerOutputObj);
 
     if (changePasswordServerOutputObj.success) {
-        hidePreviousStatusMessages(accountTabErrorStatusMessageElement, accountTabSuccessStatusMessageElement);
-        displayStatusMessage(accountTabSuccessStatusMessageElement, changePasswordServerOutputObj.message);
+        displayStatusMessage(
+            accountTabStatusMessageElement,
+            changePasswordServerOutputObj.message,
+            true
+        );
+
         return;
     }
     else {
-        hidePreviousStatusMessages(accountTabErrorStatusMessageElement, accountTabSuccessStatusMessageElement);
-        displayStatusMessage(accountTabErrorStatusMessageElement, changePasswordServerOutputObj.message);
+        displayStatusMessage(
+            accountTabStatusMessageElement,
+            changePasswordServerOutputObj.message,
+            false
+        );
     }
 }
 
@@ -294,14 +324,20 @@ function displaySearchedUserProfile(browseFormDataObject) {
     const tokenValue = this.localStorage.getItem(tokenKey);
     const inputEmail = browseFormDataObject.searchedEmail.value;
     const embeddedTab = document.getElementById("embedded-tab");
-    const browseTabErrorStatusMessageElement = document.getElementById("browse-tab-error-status-message");
+    const browseTabStatusMessageElement = document.getElementById("browse-tab-status-message");
 
     const getUserDataByEmailOutputObj = serverstub.getUserDataByEmail(tokenValue, inputEmail);
     console.log(getUserDataByEmailOutputObj);
 
     if (getUserDataByEmailOutputObj.success == false) {
         embeddedTab.style.display = displayProperty.none;
-        displayStatusMessage(browseTabErrorStatusMessageElement, getUserDataByEmailOutputObj.message);
+
+        displayStatusMessage(
+            browseTabStatusMessageElement,
+            getUserDataByEmailOutputObj.message,
+            false
+        );
+
         return;
     }
 
@@ -330,8 +366,6 @@ function displaySearchedUserProfile(browseFormDataObject) {
         textDiv.innerHTML = homeTabMessagesArray[i].content;
         postWall.appendChild(textDiv);
     }
-
-    hidePreviousStatusMessage(browseTabErrorStatusMessageElement);
 }
 
 function removeMessageNodes() {
