@@ -5,39 +5,41 @@
         <script src="client.js"></script>
         <script src="serverstub.js"></script>
         <script id="welcomeview" type="text/view">
-            <form id="sign-in-form" onsubmit="validateSignInForm(this); return false;">
+            <form id="sign-in-form" onsubmit="signIn(this); return false;">
                 <div class="form-container">
-                    <label for="signInEmail">Email</label><input id="signInEmail" type="email" required>
-                    <label for="signInPassword">Password</label><input id="signInPassword" type="password" required>
+                    <label for="signInEmail">Email</label><input id="signInEmail" type="email" required value="1@gmail.com">
+                    <label for="signInPassword">Password</label><input id="signInPassword" type="password" required value="123456">
                 </div>
                 <input id="btn-sign-in" type="submit">
             </form>
-                <form id="sign-up-form" onsubmit="validateSignUpForm(this); return false;">
+                <form id="sign-up-form" onsubmit="signUp(this); return false;">
                     <div class="form-container">
-                        <label for="firstName">First Name</label><input id="firstName" type="text" required>
-                        <label for="familyName">Family Name</label><input id="familyName" type="text" required>
-                        <label for="gender">Gender</label><input id="gender" type="text" required>
-                        <label for="city">City</label><input id="city" type="text" required>
-                        <label for="country">Country</label><input id="country" type="text" required>
-                        <label for="signUpEmail">E-mail</label><input id="signUpEmail" type="email" required>
-                        <label for="SignUpPassword">Password</label><input id="signUpPassword" type="password" required>
-                        <label for="repeatedSignUpPassword">Repeated PSW</label><input id="repeatedSignUpPassword" type="password" required>
+                        <label for="firstName">First Name</label><input id="firstName" type="text" required value="a">
+                        <label for="familyName">Family Name</label><input id="familyName" type="text" required value="b">
+                        <label for="gender">Gender</label><input id="gender" type="text" required value="c">
+                        <label for="city">City</label><input id="city" type="text" required value="d">
+                        <label for="country">Country</label><input id="country" type="text" required value="e">
+                        <label for="signUpEmail">E-mail</label><input id="signUpEmail" type="email" required value="1@gmail.com">
+                        <label for="SignUpPassword">Password</label><input id="signUpPassword" type="password" required value="123456">
+                        <label for="repeatedSignUpPassword">Repeated PSW</label><input id="repeatedSignUpPassword" type="password" required value="123456">
                     </div>
                     <input id="btn-sign-up" type="submit">
                 </form>
-            <div id="status-message" class="error-message">Error</div>
+            <div id="status-message" class="error-message center-text">Status message</div>
         </script>
         <script type="text/view" id="profileview">
-            <div class="tabs">
+            <div class="center-grid">
 				<div class="tab-buttons">
-				    <button id="btn-home-tab" onclick="displayHomeTab()" class="btn-tab">Home</button>
-				    <button id="btn-account-tab" onclick="displayAccountTab()" class="btn-tab">Account</button>
-				    <button id="btn-browse-tab" onclick="displayBrowseTab()" class="btn-tab">Browse</button>
+				    <button id="btn-home-tab" class="tab-button" onclick="displayHomeTab(); setActiveButton('home-tab');">Home</button>
+				    <button id="btn-account-tab" class="tab-button" onclick="displayAccountTab(); setActiveButton('account-tab');">Account</button>
+				    <button id="btn-browse-tab" class="tab-button" onclick="displayBrowseTab(); setActiveButton('browse-tab');">Browse</button>
 				</div>
 				<div id="home-tab" class="tab">
 					<div id="personal-info">
-						<h2>Home tab</h2>
-                        <h3>Personal information</h3>
+                        <div class="center-text"> 
+                            <h1>Home tab</h1>
+                            <h2>Personal information</h2>
+                        </div>
 						<b>Email:</b><p id="email-value" class="fetched-info"></p><br>
 						<b>Name:</b><p id="firstname-value" class="fetched-info"></p><br>
 						<b>Family name:</b><p id="familyname-value" class="fetched-info"></p><br>
@@ -45,25 +47,48 @@
 						<b>City:</b><p id="city-value" class="fetched-info"></p><br>
 						<b>Country:</b><p id="country-value" class="fetched-info"></p><br>
 					</div>
-                    <h3>Post a new message</h3>
-                    <div id="post-message">
+                    <div id="post-message" class="center-text">
+                        <h2>Post wall</h2>
                         <textarea id="text-area"></textArea><br>
-                        <button id="btn-post" onclick="postMessage();">Post</button>
+                        <button id="btn-post" class="submit-button" onclick="postMessageToWall(true);">Post</button>
+                        <button id="btn-home-refresh" class="refresh-button" onclick="refreshPostWall('home-tab')">Refresh</button>
                     </div>
-                    <div id="post-wall">
+                    <div class="post-wall">
+                        <text id="post-wall"></text>
+                    </div>
+                </div>
+                <div id="account-tab" class="tab">
+                    <div class="center-text">
+                        <h1>Account tab</h1>
+                        <h2>Change password</h2>
+                    </div>
+                    <div class="center-text">
+                        <form id="change-password-form" onsubmit="changePassword(this); return false;">
+                            <div><label for="oldPassword">Old password</label><br/><input id="oldPassword" type="password" required></div>
+                            <div><label for="newPassword">New password</label><br/><input id="newPassword" type="password" required></div>
+                            <div><label for="repeatedNewPassword">New password</label><br/><input id="repeatedNewPassword" type="password" required></div>
+                            <input id="btn-change-password" type="submit" class="submit-button" value="Change">
+                        </form>
+                    </div>
+                    <div class="center-text">
+                        <h2>Sign out</h2>
+                        <button id="btn-sign-out" class="sign-out-button" onclick="signOut()" class="btn-tab">Sign out</button>
+                        <div id="account-tab-status-message" class="error-message">Status message</div>
                     </div>
                 </div>
                 <div id="browse-tab" class="tab">
-                    <form id="browse-user-account" onsubmit="displaySearchedUserProfile(this); return false;">
-                        <h2>Browse tab</h2>
-                        <h3>Searched user's messages</h3>
-                        <div><label for="searchedEmail">Email</label><input id="searchedEmail" type="email" required></div>
-                        <input id="btn-browse-messages" type="submit">
-                    </form>
+                    <div class="center-text">
+                        <h1>Browse tab</h1>
+                        <h2>Search user</h2>
+                        <form id="browse-user-account" onsubmit="displaySearchedUserProfile(this); return false;">
+                            <div><label for="searchedEmail">Email</label><br/><input id="searchedEmail" type="email" required></div>
+                            <input id="btn-browse-messages" class="submit-button" type="submit" value="Search">
+                        </form>
+                    </div>
                     <div id="embedded-tab" class="embedded-tab">
                         <div id="embedded-personal-info">
                             <div id="searched-personal-info">
-                                <h3>Personal information</h3>
+                                <h2 class="center-text">Personal information</h2>
                                 <b>Email:</b><p id="searched-email-value" class="fetched-info"></p><br>
                                 <b>Name:</b><p id="searched-firstname-value" class="fetched-info"></p><br>
                                 <b>Family name:</b><p id="searched-familyname-value" class="fetched-info"></p><br>
@@ -72,22 +97,17 @@
                                 <b>Country:</b><p id="searched-country-value" class="fetched-info"></p><br>
                             </div>
                         </div>
-                        <div id="browse-post-wall"></div>
+                        <div id="searched-post-message" class="center-text">
+                            <h2>Post a new message</h2>
+                            <textarea id="searched-text-area"></textArea><br>
+                            <button id="btn-searched-post" class="submit-button" onclick="postMessageToWall(false);">Post</button>
+                            <button id="btn-browse-refresh" class="refresh-button" onclick="refreshPostWall('browse-tab')">Refresh</button>
+                        </div>
+                        <div class="post-wall">
+                            <div id="searched-post-wall"></div>
+                        </div>
                     </div>
-                    <div id="browse-tab-status-message" class="error-message">Status message</div>
-                </div>
-                <div id="account-tab" class="tab">
-                    <h2>Account tab</h2>
-                    <h3>Change password</h3>
-                    <form id="change-password-form" onsubmit="changePassword(this); return false;">
-                        <div><label for="oldPassword">Old password</label><input id="oldPassword" type="password" required></div>
-                        <div><label for="newPassword">New password</label><input id="newPassword" type="password" required></div>
-                        <div><label for="repeatedNewPassword">New password</label><input id="repeatedNewPassword" type="password" required></div>
-                        <input id="btn-change-password" type="submit">
-                    </form>
-                    <div id="account-tab-status-message" class="error-message">Status message</div>
-                    <h3>Sign out</h3>
-                    <button id="btn-sign-out" onclick="signOut()" class="btn-tab">Sign out</button>
+                    <div id="browse-tab-status-message" class="error-message center-text">Status message</div>
                 </div>
 			</div>
         </script>
