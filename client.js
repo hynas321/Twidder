@@ -348,8 +348,6 @@ var displayPostWall = function(ownPostWall, email) {
         postWall = document.getElementById("searched-post-wall");
     };
 
-    console.log("Post wall displayed");
-
     postWall.innerHTML = "";
 
     for (let i = 0; i < userMessages.length; i++) {
