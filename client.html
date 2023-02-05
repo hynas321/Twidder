@@ -5,27 +5,39 @@
         <script src="client.js"></script>
         <script src="serverstub.js"></script>
         <script id="welcomeview" type="text/view">
-            <form id="sign-in-form" onsubmit="signIn(this); return false;">
-                <div class="form-container">
-                    <label for="signInEmail">Email</label><input id="signInEmail" type="email" required>
-                    <label for="signInPassword">Password</label><input id="signInPassword" type="password" required>
-                </div>
-                <input id="btn-sign-in" type="submit">
-            </form>
-                <form id="sign-up-form" onsubmit="signUp(this); return false;">
-                    <div class="form-container">
-                        <label for="firstName">First Name</label><input id="firstName" type="text" required>
-                        <label for="familyName">Family Name</label><input id="familyName" type="text" required>
-                        <label for="gender">Gender</label><input id="gender" type="text" required>
-                        <label for="city">City</label><input id="city" type="text" required>
-                        <label for="country">Country</label><input id="country" type="text" required>
-                        <label for="signUpEmail">E-mail</label><input id="signUpEmail" type="email" required>
-                        <label for="SignUpPassword">Password</label><input id="signUpPassword" type="password" required>
-                        <label for="repeatedSignUpPassword">Repeated PSW</label><input id="repeatedSignUpPassword" type="password" required>
+            <div id="welcome-view-layout">
+                <img id="welcome-view-image" src="wimage.png">
+                <div class="forms-container">
+                    <div class="sign-in">
+                        <form id="sign-in-form" onsubmit="signIn(this); return false;">
+                            <label for="signInEmail">Email</label><input id="signInEmail" class="form-input" type="email" required><br><br>
+                            <label for="signInPassword">Password</label><input id="signInPassword" class="form-input" type="password" required><br><br>
+                            <input id="btn-sign-in" class="form-input-button" type="submit"><br><br>
+                        </form>
                     </div>
-                    <input id="btn-sign-up" type="submit">
-                </form>
-            <div id="status-message" class="error-message center-text">Status message</div>
+                    <div class="sign-up">
+                        <h2>Sign up here</h2>
+                        <form id="sign-up-form" onsubmit="signUp(this); return false;">
+                            <label for="firstName">First Name</label><input id="firstName" class="form-input" type="text" required><br><br>
+                            <label for="familyName">Family Name</label><input id="familyName" class="form-input" type="text" required><br><br>
+                            <label for="gender">Gender</label>
+                                <select id="gender" class="form-select" required>
+                                    <option label="Select gender"></option>
+                                    <option>Male</option>
+                                    <option>Female</option>
+                                    <option>Other</option>
+                                </select><br><br>
+                            <label for="city">City</label><input id="city" class="form-input" type="text" required><br><br>
+                            <label for="country">Country</label><input id="country" class="form-input" type="text" required><br><br>
+                            <label for="signUpEmail">E-mail</label><input id="signUpEmail" class="form-input" type="email" required><br><br>
+                            <label for="SignUpPassword">Password</label><input id="signUpPassword" class="form-input" type="password" required><br><br>
+                            <label for="repeatedSignUpPassword">Repeated PSW</label><input id="repeatedSignUpPassword" class="form-input" type="password" required><br><br>
+                            <input id="btn-sign-up" class="form-input-button" class="form-input-button" type="submit">
+                        </form>
+                    </div>
+                </div>
+                <div id="status-message" class="error-message center-text">Status message</div>
+            </div>
         </script>
         <script type="text/view" id="profileview">
             <div class="center-grid">
