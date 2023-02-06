@@ -12,3 +12,9 @@ CREATE TABLE IF NOT EXISTS LoggedInUser(
     token VARCHAR(60) PRIMARY KEY,
     email VARCHAR(60)
 )
+
+CREATE TABLE IF NOT EXISTS Post(
+    email VARCHAR(60) PRIMARY KEY,
+    writer VARCHAR(60),
+    content VARCHAR(240)
+)

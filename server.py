@@ -1,21 +1,38 @@
 from flask import Flask, request
 
 import database_helper as db_helper
+import json
 
 app = Flask(__name__)
+database = db_helper.Database("database.db")
 
 @app.route("/", methods = ["GET"])
 def root():
-    return { "status": 200 }
+    return json.dumps({ "status": 200 })
 
 @app.teardown_request
 def teardown(exception):
     db_helper.disconnect()
 
-@app.route("/test/<email>/<password>", methods = ["GET"])
+@app.route("/test/", methods = ["GET"])
 def sign_in(email: str, password: str):
+    user_DAO = db_helper.UserDAO()
+    user = user_DAO.get_user_by_email(email)
 
-    return { "status": 200, "token": "abc" }
+    if user is None:
+        return json.dumps({ "status": 404, "": "" })
+
+    if user.password != password:
+        return json.dumps({ "status": 401, "": "" })
+
+    logged_in_user = db_helper.LoggedInUser("sample_token", user.email)
+    logged_in_user_DAO = db_helper.LoggedInUserDAO(logged_in_user)
+    is_logged_in_user_created = logged_in_user_DAO.create_logged_in_user(logged_in_user)
+
+    if not is_logged_in_user_created:
+        return json.dumps({ "status": 500, "": ""})
+
+    return json.dumps({ "status": 200, "token": "abc" })
 
 @app.route("/user/create/", methods = ["POST"])
 def sign_up():
@@ -31,42 +48,64 @@ def sign_up():
         received_json['country']
     )
 
-    is_operation_successful = db_helper.create_user(user)
+    user_DAO = db_helper.UserDAO()
+    is_user_created = user_DAO.create_user(user)
 
-    if is_operation_successful is False:
-        return { "status:": 500 }
+    if not is_user_created:
+        return json.dumps({ "status:": 500 })
 
-    return { "status": 201 }
+    return json.dumps({ "status": 201 })
 
 def sign_out(token: str):
-    pass
+    logged_in_user_DAO = db_helper.LoggedInUserDAO(database)
+    is_logged_in_user_deleted: bool = logged_in_user_DAO.delete_logged_in_user(token)
 
-def change_password(token: str, oldPassword: str, newPassword: str):
-    pass
+    if not is_logged_in_user_deleted:
+        return json.dumps({ "status": 500, "": ""})
+
+    return json.dumps({ "status": 200 })
+
+
+def change_password(token: str, newPassword: str):
+    user_DAO = db_helper.UserDAO(database)
+    user: db_helper.User = user_DAO.get_user_by_token(token)
+
+    if user is None:
+        return json.dumps({ "status": 500, "": "" })
+
+    is_password_changed: bool = user_DAO.change_user_password(user.token, newPassword)
+
+    if not is_password_changed:
+        return json.dumps({ "status": 500, "": "" })
+
+    return json.dumps({ "status": 200, "": "" })
 
 def get_user_data_by_token(token: str):
-    userData: dict = { "email": "", "firstname": "", "familyname": "", "gender": "", "city": "", "country": "" }
+    user_data = db_helper.get_user_data(token)
 
-    return { "status": 200, "data": userData }
+    if user_data is None:
+        return json.dumps({ "status": 404, "data": "" })
+
+    return json.dumps({ "status": 200, "data": user_data })
 
 @app.route("/user/get/<token>/<email>")
 def get_user_data_by_email(token: str, email: str):
     user_data = db_helper.get_user_data(token, email)
 
     if user_data is None:
-        return { "status": 404, "data": "" }
+        return json.dumps({ "status": 404, "data": "" })
 
-    return { "status": 200, "data": user_data }
+    return json.dumps({ "status": 200, "data": user_data })
 
 def get_user_messages_by_token(token: str):
     userMessages: list = []
 
-    return { "status": 200, "data": userMessages }
+    return json.dumps({ "status": 200, "data": userMessages })
 
 def get_user_messages_by_email(token: str, email: str):
     userMessages: list = []
 
-    return { "status": 200, "data": userMessages }
+    return json.dumps({ "status": 200, "data": userMessages })
 
 def post_message(token: str, message: str, email: str):
     pass
