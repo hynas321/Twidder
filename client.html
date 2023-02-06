@@ -5,39 +5,41 @@
         <script src="client.js"></script>
         <script src="serverstub.js"></script>
         <script id="welcomeview" type="text/view">
-            <div id="welcome-view-layout">
-                <img id="welcome-view-image" src="wimage.png">
-                <div class="forms-container">
-                    <div class="sign-in">
-                        <form id="sign-in-form" onsubmit="signIn(this); return false;">
-                            <label for="signInEmail">Email<input id="signInEmail" class="form-input" type="email" required></label>
-                            <label for="signInPassword">Password<input id="signInPassword" class="form-input" type="password" required></label>
-                            <label for="btn-sign-in><input id="btn-sign-in" class="form-input-button" type="submit">
-                        </form>
-                    </div>
-                    <div class="sign-up">
-                        <h2>Sign up here</h2>
-                        <form id="sign-up-form" onsubmit="signUp(this); return false;">
-                            <label for="firstName">First Name</label><input id="firstName" class="form-input" type="text" required><br><br>
-                            <label for="familyName">Family Name</label><input id="familyName" class="form-input" type="text" required><br><br>
-                            <label for="gender">Gender</label>
-                                <select id="gender" class="form-select" required>
-                                    <option label="Select gender"></option>
-                                    <option>Male</option>
-                                    <option>Female</option>
-                                    <option>Other</option>
-                                </select><br><br>
-                            <label for="city">City</label><input id="city" class="form-input" type="text" required><br><br>
-                            <label for="country">Country</label><input id="country" class="form-input" type="text" required><br><br>
-                            <label for="signUpEmail">E-mail</label><input id="signUpEmail" class="form-input" type="email" required><br><br>
-                            <label for="SignUpPassword">Password</label><input id="signUpPassword" class="form-input" type="password" required><br><br>
-                            <label for="repeatedSignUpPassword">Repeated PSW</label><input id="repeatedSignUpPassword" class="form-input" type="password" required><br><br>
-                            <input id="btn-sign-up" class="form-input-button" class="form-input-button" type="submit">
-                        </form>
-                    </div>
+        <div id="welcomeview-layout">
+            <img id="Bild" src="wimage.png"> 
+            <form id="sign-in" onsubmit="signIn(this); return false;"" >  <!-- generate sign-in and sign-out form -->  <!-- form need two attributes-->
+                <div><h3>Sign-In!</h3></div>
+                <div class="form-container">
+                    <label for="signInEmail">E-Mail</label> <input id="signInEmail" type="email" required>  <!--With the command "label it is possible to click on buttons. "for" in the label have to match the "id" in the input field. The connection is created.-->
+                    <label for="signInPassword">Password</label> <input id="signInPassword" type="password" required>  <!-- div means division -->
                 </div>
-                <div id="status-message" class="error-message center-text">Status message</div>
-            </div>
+                <div class="form-input-button">
+                    <input name="btn-sign-in" type="submit" value="Sign in"> 
+                </div>
+            </form>
+            <form id="sign-up" onSubmit="signUp(this); return false;">
+                <div> <h3> Sign-Up! </h3></div>
+                <div class="form-container"> 
+                    <label for="firstName"> First name </label>  <input id="firstName" type="text" required> 
+                    <label for="familyName"> Family name </label> <input id="familyName" type="text" required>
+                    <label for="gender">Gender</label>
+                            <select id="gender"> 
+                                <option> Male </option>
+                                <option> Female </option>
+                                <option> Others </option>
+                            </select> 
+                    <label for="city"> City </label> <input id="city" type="text" required>
+                    <label for="country"> Country </label> <input id="country" type="text" required> 
+                    <label for="signUpEmail"> E-Mail </label> <input id="signUpEmail" type="email" required> 
+                    <label for="signUpPassword"> Password </label> <input id="signUpPassword" type="password" required>
+                    <label for="repeatedSignUpPassword"> Repeat password </label> <input id="repeatedSignUpPassword" type="password" required> 
+                </div>
+                <div class="form-input-button">
+                    <input id="btn-sign-up" type="submit" value="Sign up"> 
+                </div>
+                <div id="status-message" class="error-message">Status message</div>
+            </form> 
+        </div>
         </script>
         <script type="text/view" id="profileview">
             <div class="center-grid">

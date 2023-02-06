@@ -1,66 +1,48 @@
-body {
-    background-color: seashell;
+
+body{
+    background-color: lightblue;
 }
 
-#welcome-view-layout {
+#welcomeview-layout {
     width: 600px;
     height: 400px;
     margin-top: 100px;
-    margin-left: auto;
-    margin-right: auto;
+    margin-left: 25%;
 }
 
-#welcome-view-image {
+#Bild{
     width: 340px;
+    height: 400px;
     float: left;
+    margin-right: 10px; /** distance to the right text**/
+    margin-left: 100px;
 }
 
-  
-.forms-container {
+#sign-in {
+    background-color: white;
     width: 250px;
-    height: 100%;  
-    float: right;
-}
-
-.sign-in {
-    width: 250px;
-    background: white;
-  }
-
-  label {
-    width: 400px;
-    line-height: 26px;
+    height: 110px;
     margin-bottom: 10px;
-  }
-  
-.sign-up {
+    margin-left: 450px; 
+    margin-top: 100px;
+}
+
+#sign-up {
+    background-color: white;
     width: 250px;
-    background: white;
+    height: 270px;
+    margin-left: 450px;
+    float: top;
 }
 
-.form-label {
-    margin-bottom: 5px;
+.form-container {
+    display: grid;
+    grid-template-columns: 100px 140px;
+    grid-gap: 5px;
 }
 
-.form-input {
-    height: 20px;
-    flex: 0 0 200px;
-    margin-left: 10px;
-    width: 55%;
-    float: right;
-}
-  
-.form-select {
-    width: 55%;
-    float: right;
-}
-
-.form-input-button {
-    height: 20px;
-    flex: 0 0 200px;
-    margin-left: 10px;
-    width: 55%;
-    float: right;
+.form-button {
+    margin-left: right;
 }
 
 .error-message {
@@ -69,7 +51,7 @@ body {
     display: none;
 }
 
-.success-message {
+.success-message{
     margin-top: 30px;
     color: green;
     display: none;
@@ -80,11 +62,11 @@ body {
     margin-left: 10px;
 }
 
-.tab {
+.tab{
     display: none;
 }
 
-.embedded-tab {
+.embedded-tab{
     display: none;
 }
 
@@ -94,7 +76,16 @@ body {
 }
 
 .form-input-button {
+    width: 30%;
     float: right;
+}
+
+label {
+    width: 110px;
+}
+
+input {
+    width: 100%;
 }
 
 .tab-button {
