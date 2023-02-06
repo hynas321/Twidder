@@ -25,7 +25,7 @@ class Database:
         )
 
         self.db.execute(
-            """CREATE TABLE IF NOT EXISTS Post(
+            """CREATE TABLE IF NOT EXISTS Message(
                 email VARCHAR(60) PRIMARY KEY,
                 writer VARCHAR(60),
                 content VARCHAR(240)
@@ -62,8 +62,11 @@ class LoggedInUser:
         self.token = token
         self.email = email
 
-class Post:
-    def __init__(self, )
+class Message:
+    def __init__(self, email: str, writer: str, content: str):
+        self.email = email
+        self.writer = writer
+        self.content = content
 
 class UserDAO:
     def __init__(self, database: Database):
@@ -83,6 +86,7 @@ class UserDAO:
                     user.country
                 )
             )
+            cursor.close()
             self.db.commit()
 
             return True
@@ -97,8 +101,8 @@ class UserDAO:
         try:
             cursor = self.db.cursor()
             cursor.execute("SELECT * FROM User WHERE email = ?", (email))
-
             cursor_output = cursor.fetchone()
+            cursor.close()
 
             user = User(
                 cursor_output[0],
@@ -122,8 +126,8 @@ class UserDAO:
         try:
             cursor = self.db.cursor()
             cursor.execute("SELECT * FROM User WHERE token = ?", (token))
-
             cursor_output = cursor.fetchone()
+            cursor.close()
 
             user = User(
                 cursor_output[0],
@@ -147,6 +151,7 @@ class UserDAO:
         try:
             cursor = self.db.cursor()
             cursor.execute("UPDATE User SET password = ? WHERE token = ?", (new_password, token))
+            cursor.close()
 
             return True
 
@@ -156,9 +161,6 @@ class UserDAO:
 
             return False
         
-
-
-
 class LoggedInUserDAO:
     def __init__(self, database: Database):
         self.db = database
@@ -173,6 +175,7 @@ class LoggedInUserDAO:
                 )
             )
             self.db.commit()
+            cursor.close()
 
             return True
 
@@ -187,6 +190,9 @@ class LoggedInUserDAO:
             cursor = self.db.cursor()
             cursor.execute("DELETE FROM LoggedInUser WHERE token = ?", (token))
             self.db.commit()
+            cursor.close()
+
+            return True
 
         except Exception as ex:
             print(ex)
@@ -199,6 +205,7 @@ class LoggedInUserDAO:
             cursor = self.db.cursor()
             cursor.execute("SELECT * FROM LoggedInUser WHERE token = ?", (token))
             self.db.commit()
+            cursor.close()
 
             cursor_output = cursor.fetchone()
 
@@ -223,6 +230,9 @@ class LoggedInUserDAO:
 
             cursor_output = cursor.fetchone()
 
+            if cursor_output is None:
+                return None
+
             logged_in_user = LoggedInUser(
                 cursor_output[0],
                 cursor_output[1]
@@ -235,3 +245,49 @@ class LoggedInUserDAO:
             self.db.rollback()
 
             return None
+
+class MessageDao:
+    def __init__(self, database: Database):
+        self.db = database
+
+    def get_user_messages_by_token(self, token: str):
+        try:
+            cursor = self.db.cursor()
+            cursor.execute("SELECT * FROM Message WHERE token = ?", (token))
+            self.db.commit()
+
+            cursor_output = cursor.fetchall()
+
+            result: list = []
+            for output in cursor_output:
+                result.append(output)
+
+            return result
+
+        except Exception as ex:
+            print(ex)
+            self.db.rollback()
+
+            return None
+
+    def get_user_messages_by_email(self, email: str):
+        try:
+            cursor = self.db.cursor()
+            cursor.execute("SELECT * FROM Message WHERE email = ?", (email))
+            self.db.commit()
+
+            cursor_output = cursor.fetchall()
+
+            result: list = []
+            for output in cursor_output:
+                result.append(output)
+
+            return result
+
+        except Exception as ex:
+            print(ex)
+            self.db.rollback()
+
+            return None
+
+        
