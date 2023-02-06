@@ -26,6 +26,12 @@ body {
     width: 250px;
     background: white;
   }
+
+  label {
+    width: 400px;
+    line-height: 26px;
+    margin-bottom: 10px;
+  }
   
 .sign-up {
     width: 250px;
@@ -37,6 +43,9 @@ body {
 }
 
 .form-input {
+    height: 20px;
+    flex: 0 0 200px;
+    margin-left: 10px;
     width: 55%;
     float: right;
 }
@@ -47,6 +56,10 @@ body {
 }
 
 .form-input-button {
+    height: 20px;
+    flex: 0 0 200px;
+    margin-left: 10px;
+    width: 55%;
     float: right;
 }
 
