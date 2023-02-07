@@ -1,4 +1,59 @@
-.error-message{
+
+body{
+    background-color: rgb(231, 231, 231);
+}
+
+#welcomeview-layout {
+    width: 600px;
+    height: 400px;
+    margin-top: 100px;
+    margin-left: 25%;
+}
+
+#Bild{
+    width: 340px;
+    height: 400px;
+    float: left;
+    margin-right: 10px; /** distance to the right text**/
+    margin-left: 100px;
+}
+
+#sign-in {
+    background-color: white;
+    width: 250px;
+    height: 110px;
+    margin-bottom: 10px;
+    margin-left: 450px; 
+    margin-top: 100px;
+}
+
+#sign-up {
+    background-color: white;
+    width: 250px;
+    height: 270px;
+    margin-left: 450px;
+    float: top;
+}
+
+.form-container {
+    display: grid;
+    grid-template-columns: 100px 140px;
+    grid-gap: 5px;
+}
+
+.form-label {
+    width: 110px;
+}
+
+.form-input {
+    width: 100%;
+}
+
+.form-button {
+    margin-left: right;
+}
+
+.error-message {
     margin-top: 30px;
     color: red;
     display: none;
@@ -10,7 +65,7 @@
     display: none;
 }
 
-.fetched-info{
+.fetched-info {
     display: inline;
     margin-left: 10px;
 }
@@ -29,6 +84,7 @@
 }
 
 .form-input-button {
+    width: 30%;
     float: right;
 }
 
