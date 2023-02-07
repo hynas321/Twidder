@@ -22,7 +22,7 @@ def sign_in():
         return json.dumps({""}), 500
 
     user_DAO = db_helper.UserDAO()
-    user = user_DAO.get_user_by_email(received_json.email)
+    user = user_DAO.get_user_by_email(received_json["email"])
 
     if user is None:
         return json.dumps({""}), 500
@@ -51,13 +51,13 @@ def sign_up():
         return json.dumps({""}), 500
 
     user = db_helper.User(
-        received_json['email'],
-        received_json['password'],
-        received_json['firstname'],
-        received_json['familyname'],
-        received_json['gender'],
-        received_json['city'],
-        received_json['country']
+        received_json["email"],
+        received_json["password"],
+        received_json["firstname"],
+        received_json["familyname"],
+        received_json["gender"],
+        received_json["city"],
+        received_json["country"]
     )
 
     user_DAO = db_helper.UserDAO()
@@ -69,42 +69,83 @@ def sign_up():
     return json.dumps({""}), 200
 
 @app.route("/sign-out", methods=["POST"])
-def sign_out(token: str):
+def sign_out():
+    received_token = request.headers.get("token")
+
+    if received_token is None:
+        return json.dumps({""}), 500
+
+    token_manager = db_helper.TokenManager(database)
+    
+    if not token_manager.verify_token(received_token):
+        return json.dumps({""}), 500
+
     logged_in_user_DAO = db_helper.LoggedInUserDAO(database)
-    is_logged_in_user_deleted: bool = logged_in_user_DAO.delete_logged_in_user(token)
+    is_logged_in_user_deleted: bool = logged_in_user_DAO.delete_logged_in_user(received_token)
 
     if not is_logged_in_user_deleted:
         return json.dumps({""}), 500
 
     return json.dumps({""}), 200
 
-@app.route("/change-password")
-def change_password(token: str, newPassword: str):
+@app.route("/change-password", methods=["POST"])
+def change_password():
+    received_token = request.headers.get("token")
+    received_json = request.get_json()[0]
+
+    if received_token is None or "oldPassword" not in received_json or "newPassword" not in received_json:
+        return json.dumps({""}), 500
+
+    token_manager = db_helper.TokenManager(database)
+    
+    if not token_manager.verify_token(received_token):
+        return json.dumps({""}), 500
+    
     user_DAO = db_helper.UserDAO(database)
-    user: db_helper.User = user_DAO.get_user_by_token(token)
+    user: db_helper.User = user_DAO.get_user_by_token(received_token)
 
     if user is None:
         return json.dumps({""}), 500
 
-    is_password_changed: bool = user_DAO.change_user_password(user.token, newPassword)
+    is_password_changed: bool = user_DAO.change_user_password(received_token, received_json["newPassword"])
 
     if not is_password_changed:
         return json.dumps({""}), 500
 
     return json.dumps({""}), 200
 
-@app.route("/get-user-data-by-token")
-def get_user_data_by_token(token: str):
+@app.route("/get-user-data-by-token", methods=["GET"])
+def get_user_data_by_token():
+    received_token = request.headers.get("token")
+
+    if received_token is None:
+        return json.dumps({""}), 500
+
+    token_manager = db_helper.TokenManager(database)
+    
+    if not token_manager.verify_token(received_token):
+        return json.dumps({""}), 500
+
     user_DAO = db_helper.UserDAO(database)
-    user_data = user_DAO.get_user_by_token(token)
+    user_data = user_DAO.get_user_by_token(received_token)
 
     if user_data is None:
         return json.dumps({""}), 500
 
     return json.dumps({""}), 200
 
-@app.route("/get-user-data-by-email")
-def get_user_data_by_email(token: str, email: str):
+@app.route("/get-user-data-by-email/<email>", methods=["GET"])
+def get_user_data_by_email(email: str):
+    received_token = request.headers.get("token")
+
+    if received_token is None:
+        return json.dumps({""}), 500
+
+    token_manager = db_helper.TokenManager(database)
+    
+    if not token_manager.verify_token(received_token):
+        return json.dumps({""}), 500
+
     user_DAO = db_helper.UserDAO(database)
     user_data = user_DAO.get_user_by_email(email)
 
@@ -113,23 +154,68 @@ def get_user_data_by_email(token: str, email: str):
 
     return json.dumps({""}), 200
 
-@app.route("/get-user-messages-by-token")
-def get_user_messages_by_token(token: str):
+@app.route("/get-user-messages-by-token", methods=["GET"])
+def get_user_messages_by_token():
+    received_token = request.headers.get("token")
+
+    if received_token is None:
+        return json.dumps({""}), 500
+
+    token_manager = db_helper.TokenManager(database)
     
+    if not token_manager.verify_token(received_token):
+        return json.dumps({""}), 500
+
     userMessages: list = []
 
     return json.dumps({""}), 200
 
-@app.route("/get-user-messages-by-email")
-def get_user_messages_by_email(token: str, email: str):
-    userMessages: list = []
+@app.route("/get-user-messages-by-email/<email>", methods=["GET"])
+def get_user_messages_by_email(email: str):
+    received_token = request.headers.get("token")
+
+    if received_token is None:
+        return json.dumps({""}), 500
+
+    token_manager = db_helper.TokenManager(database)
+    
+    if not token_manager.verify_token(received_token):
+        return json.dumps({}), 500
+    
+    message_DAO = db_helper.MessageDao(database)
+    messages = message_DAO.get_user_messages_by_email(email)
+
+    if messages is None:
+        return json.dumps({""}), 500
+
+    return json.dumps({messages}), 200
+
+@app.route("/post-message", methods=["POST"])
+def post_message():
+    received_token = request.headers.get("token")
+    received_json = request.get_json()[0]
+
+    if received_token is None:
+        return json.dumps({}), 500
+
+    token_manager = db_helper.TokenManager(database)
+
+    if not token_manager.verify_token(received_token):
+        return json.dumps({}), 500
+
+    if "message" not in received_json or "email" not in received_json:
+        return json.dumps({}), 500
+
+    user_DAO = db_helper.UserDAO(database)
+    user_data = user_DAO.get_user_by_email(received_json["email"])
+
+    if user_data is None:
+        return json.dumps({""}), 500
+
+    message_DAO = db_helper.MessageDao(database)
+    message_DAO.add_message(received_token, received_json["message"], received_json["email"])
 
     return json.dumps({""}), 200
-
-@app.route("/post-message")
-def post_message(token: str, message: str, email: str):
-
-    pass
 
 if __name__ == "__main__":
     app.debug = True

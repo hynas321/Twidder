@@ -1,4 +1,5 @@
 import sqlite3
+import uuid
 from flask import g
 
 class Database:
@@ -290,4 +291,52 @@ class MessageDao:
 
             return None
 
+    def add_message(self, token: str, message: str, email: str) -> bool:
+        try:
+            user_dao = UserDAO(self.db)
+
+            writer_user = user_dao.get_user_by_token(token)
+
+            if writer_user is None:
+                return False
+
+            recipient_user = user_dao.get_user_by_email(email)
+
+            if recipient_user is None:
+                return False
+
+            cursor = self.db.cursor()
+            cursor.execute("INSERT INTO Message VALUES (?, ?, ?)",
+                (
+                    recipient_user.email,
+                    writer_user.email,
+                    message
+                )
+            )
+            self.db.commit()
+            cursor.close()
+
+            return True
+
+        except Exception as ex:
+            print(ex)
+            self.db.rollback()
+
+            return False
         
+class TokenManager:
+    def __init__(self, database: Database):
+        self.db = database
+
+    def generate_token(self) -> str:
+        return uuid.uuid4().hex
+
+    def verify_token(self, token: str) -> bool:
+        logged_in_user_DAO = LoggedInUserDAO(self.db)
+        logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(token)
+
+        if logged_in_user is None:
+            return False
+        
+        return True
+
