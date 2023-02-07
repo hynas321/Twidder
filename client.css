@@ -1,6 +1,6 @@
 
 body{
-    background-color: lightblue;
+    background-color: rgb(231, 231, 231);
 }
 
 #welcomeview-layout {
@@ -41,6 +41,14 @@ body{
     grid-gap: 5px;
 }
 
+.form-label {
+    width: 110px;
+}
+
+.form-input {
+    width: 100%;
+}
+
 .form-button {
     margin-left: right;
 }
@@ -78,14 +86,6 @@ body{
 .form-input-button {
     width: 30%;
     float: right;
-}
-
-label {
-    width: 110px;
-}
-
-input {
-    width: 100%;
 }
 
 .tab-button {
