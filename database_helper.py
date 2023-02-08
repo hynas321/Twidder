@@ -2,11 +2,15 @@ import sqlite3
 import uuid
 from flask import g
 
-class Database:
-    def __init__(self, database_file):
-        self.db = sqlite3.connect(database_file)
+DATABASE_URI = "database.db"
 
-        self.db.execute(
+def get_db():
+    db = getattr(g, 'db', None)
+
+    if db is None:
+        db = g.db = sqlite3.connect(DATABASE_URI)
+
+        db.execute(
             """CREATE TABLE IF NOT EXISTS User(
                     email VARCHAR(60) PRIMARY KEY,
                     password VARCHAR(60),
@@ -18,26 +22,27 @@ class Database:
                 )"""
         )
 
-        self.db.execute(
+        db.execute(
             """CREATE TABLE IF NOT EXISTS LoggedInUser(
                     token VARCHAR(60) PRIMARY KEY,
                     email VARCHAR(60)
                 )"""
         )
 
-        self.db.execute(
+        db.execute(
             """CREATE TABLE IF NOT EXISTS Message(
                 email VARCHAR(60) PRIMARY KEY,
                 writer VARCHAR(60),
                 content VARCHAR(240)
             )"""
         )
+    return db
 
-    def close(self):
-        self.db.close()
-        
-    def get_connection(self):
-        return self.db
+def disconnect():
+    db = getattr(g, 'db', None)
+    if db is not None:
+        g.db.close()
+        g.db = None
 
 class User:
     def __init__(
@@ -70,12 +75,9 @@ class Message:
         self.content = content
 
 class UserDAO:
-    def __init__(self, database: Database):
-        self.db = database.get_connection()
-
     def create_user(self, user: User) -> bool:
         try:
-            cursor = self.db.cursor()
+            cursor = get_db().cursor()
             cursor.execute("INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     user.email,
@@ -88,23 +90,22 @@ class UserDAO:
                 )
             )
             cursor.close()
-            self.db.commit()
+            get_db().commit()
 
             return True
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return False
 
     def get_user_by_email(self, email: str):
         try:
-            cursor = self.db.cursor()
-            cursor.execute("SELECT * FROM User WHERE email = ?", (email))
+            cursor = get_db().cursor()
+            cursor.execute("SELECT * FROM User WHERE email = ?", [email])
             cursor_output = cursor.fetchone()
             cursor.close()
-
+            
             user = User(
                 cursor_output[0],
                 cursor_output[1],
@@ -119,13 +120,12 @@ class UserDAO:
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return None
 
     def get_user_by_token(self, token: str):
         try:
-            cursor = self.db.cursor()
+            cursor = get_db().cursor()
             cursor.execute("SELECT * FROM User WHERE token = ?", (token))
             cursor_output = cursor.fetchone()
             cursor.close()
@@ -144,13 +144,12 @@ class UserDAO:
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return None
 
     def change_user_password(self, token: str, new_password: str) -> bool:
         try:
-            cursor = self.db.cursor()
+            cursor = get_db().cursor()
             cursor.execute("UPDATE User SET password = ? WHERE token = ?", (new_password, token))
             cursor.close()
 
@@ -158,54 +157,48 @@ class UserDAO:
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return False
         
 class LoggedInUserDAO:
-    def __init__(self, database: Database):
-        self.db = database
-
     def create_logged_in_user(self, logged_in_user: LoggedInUser) -> bool:
         try:
-            cursor = self.db.cursor()
-            cursor.execute("INSERT INTO User VALUES (?, ?)",
-                (
+            cursor = get_db().cursor()
+            cursor.execute("INSERT INTO LoggedInUser VALUES (?, ?)",
+                [
                     logged_in_user.token,
                     logged_in_user.email
-                )
+                ]
             )
-            self.db.commit()
+            get_db().commit()
             cursor.close()
 
             return True
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return False
 
     def delete_logged_in_user(self, token: str) -> bool:
         try:
-            cursor = self.db.cursor()
+            cursor = get_db().cursor()
             cursor.execute("DELETE FROM LoggedInUser WHERE token = ?", (token))
-            self.db.commit()
+            get_db().commit()
             cursor.close()
 
             return True
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return False
 
     def get_logged_in_user_by_token(self, token: str):
         try:
-            cursor = self.db.cursor()
+            cursor = get_db().cursor()
             cursor.execute("SELECT * FROM LoggedInUser WHERE token = ?", (token))
-            self.db.commit()
+            get_db().commit()
             cursor.close()
 
             cursor_output = cursor.fetchone()
@@ -219,15 +212,14 @@ class LoggedInUserDAO:
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return None
 
     def get_logged_in_user_by_email(self, email: str):
         try:
-            cursor = self.db.cursor()
+            cursor = get_db().cursor()
             cursor.execute("SELECT * FROM LoggedInUser WHERE email = ?", (email))
-            self.db.commit()
+            get_db().commit()
 
             cursor_output = cursor.fetchone()
 
@@ -243,19 +235,15 @@ class LoggedInUserDAO:
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return None
 
 class MessageDao:
-    def __init__(self, database: Database):
-        self.db = database
-
     def get_user_messages_by_token(self, token: str):
         try:
-            cursor = self.db.cursor()
+            cursor = get_db().cursor()
             cursor.execute("SELECT * FROM Message WHERE token = ?", (token))
-            self.db.commit()
+            get_db().commit()
 
             cursor_output = cursor.fetchall()
 
@@ -267,15 +255,14 @@ class MessageDao:
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return None
 
     def get_user_messages_by_email(self, email: str):
         try:
-            cursor = self.db.cursor()
+            cursor = get_db().cursor()
             cursor.execute("SELECT * FROM Message WHERE email = ?", (email))
-            self.db.commit()
+            get_db().commit()
 
             cursor_output = cursor.fetchall()
 
@@ -287,13 +274,12 @@ class MessageDao:
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return None
 
     def add_message(self, token: str, message: str, email: str) -> bool:
         try:
-            user_dao = UserDAO(self.db)
+            user_dao = UserDAO()
 
             writer_user = user_dao.get_user_by_token(token)
 
@@ -305,7 +291,7 @@ class MessageDao:
             if recipient_user is None:
                 return False
 
-            cursor = self.db.cursor()
+            cursor = get_db().cursor()
             cursor.execute("INSERT INTO Message VALUES (?, ?, ?)",
                 (
                     recipient_user.email,
@@ -313,26 +299,22 @@ class MessageDao:
                     message
                 )
             )
-            self.db.commit()
+            get_db().commit()
             cursor.close()
 
             return True
 
         except Exception as ex:
             print(ex)
-            self.db.rollback()
 
             return False
         
 class TokenManager:
-    def __init__(self, database: Database):
-        self.db = database
-
     def generate_token(self) -> str:
         return uuid.uuid4().hex
 
     def verify_token(self, token: str) -> bool:
-        logged_in_user_DAO = LoggedInUserDAO(self.db)
+        logged_in_user_DAO = LoggedInUserDAO()
         logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(token)
 
         if logged_in_user is None:

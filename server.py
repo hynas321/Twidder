@@ -4,11 +4,11 @@ import database_helper as db_helper
 import json
 
 app = Flask(__name__)
-database = db_helper.Database("database.db")
 
 @app.route("/", methods = ["GET"])
 def root():
-    return json.dumps({"Hello"}), 200
+    
+    return "", 200
 
 @app.teardown_request
 def teardown(exception):
@@ -19,25 +19,28 @@ def sign_in():
     received_json = request.get_json()[0]
 
     if "email" not in received_json or "password" not in received_json:
-        return json.dumps({""}), 500
+        return json.dumps({"message:": "Missing credentials"}), 500
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_by_email(received_json["email"])
 
     if user is None:
-        return json.dumps({""}), 500
+        return json.dumps({"message": "User not found"}), 500
 
-    if user.password != received_json.password:
-        return json.dumps({""}), 500
+    if user.password != received_json["password"]:
+        return json.dumps({"message": "Incorrect password"}), 500
 
     logged_in_user = db_helper.LoggedInUser("sample_token", user.email)
-    logged_in_user_DAO = db_helper.LoggedInUserDAO(logged_in_user)
+    logged_in_user_DAO = db_helper.LoggedInUserDAO()
     is_logged_in_user_created = logged_in_user_DAO.create_logged_in_user(logged_in_user)
 
     if not is_logged_in_user_created:
-        return json.dumps({""}), 500
+        return json.dumps({"message": "Sign in error"}), 500
 
-    return json.dumps({""}), 200
+    token_manager = db_helper.TokenManager()
+    generated_token = token_manager.generate_token()
+
+    return json.dumps({"token": generated_token}), 200
 
 @app.route("/sign-up", methods = ["POST"])
 def sign_up():
@@ -64,7 +67,7 @@ def sign_up():
     is_user_created = user_DAO.create_user(user)
 
     if not is_user_created:
-        return json.dumps({""}), 500
+        return json.dumps({"message:": "User"}), 500
 
     return json.dumps({""}), 200
 
@@ -75,12 +78,12 @@ def sign_out():
     if received_token is None:
         return json.dumps({""}), 500
 
-    token_manager = db_helper.TokenManager(database)
+    token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
         return json.dumps({""}), 500
 
-    logged_in_user_DAO = db_helper.LoggedInUserDAO(database)
+    logged_in_user_DAO = db_helper.LoggedInUserDAO()
     is_logged_in_user_deleted: bool = logged_in_user_DAO.delete_logged_in_user(received_token)
 
     if not is_logged_in_user_deleted:
@@ -93,15 +96,16 @@ def change_password():
     received_token = request.headers.get("token")
     received_json = request.get_json()[0]
 
-    if received_token is None or "oldPassword" not in received_json or "newPassword" not in received_json:
+    if (received_token is None or
+        "oldPassword" not in received_json or "newPassword" not in received_json):
         return json.dumps({""}), 500
 
-    token_manager = db_helper.TokenManager(database)
+    token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
         return json.dumps({""}), 500
     
-    user_DAO = db_helper.UserDAO(database)
+    user_DAO = db_helper.UserDAO()
     user: db_helper.User = user_DAO.get_user_by_token(received_token)
 
     if user is None:
@@ -121,12 +125,12 @@ def get_user_data_by_token():
     if received_token is None:
         return json.dumps({""}), 500
 
-    token_manager = db_helper.TokenManager(database)
+    token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
         return json.dumps({""}), 500
 
-    user_DAO = db_helper.UserDAO(database)
+    user_DAO = db_helper.UserDAO()
     user_data = user_DAO.get_user_by_token(received_token)
 
     if user_data is None:
@@ -141,12 +145,12 @@ def get_user_data_by_email(email: str):
     if received_token is None:
         return json.dumps({""}), 500
 
-    token_manager = db_helper.TokenManager(database)
+    token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
         return json.dumps({""}), 500
 
-    user_DAO = db_helper.UserDAO(database)
+    user_DAO = db_helper.UserDAO()
     user_data = user_DAO.get_user_by_email(email)
 
     if user_data is None:
@@ -161,7 +165,7 @@ def get_user_messages_by_token():
     if received_token is None:
         return json.dumps({""}), 500
 
-    token_manager = db_helper.TokenManager(database)
+    token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
         return json.dumps({""}), 500
@@ -177,12 +181,12 @@ def get_user_messages_by_email(email: str):
     if received_token is None:
         return json.dumps({""}), 500
 
-    token_manager = db_helper.TokenManager(database)
+    token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
         return json.dumps({}), 500
     
-    message_DAO = db_helper.MessageDao(database)
+    message_DAO = db_helper.MessageDao()
     messages = message_DAO.get_user_messages_by_email(email)
 
     if messages is None:
@@ -195,24 +199,22 @@ def post_message():
     received_token = request.headers.get("token")
     received_json = request.get_json()[0]
 
-    if received_token is None:
+    if (received_token is None or 
+        "message" not in received_json or "email" not in received_json):
         return json.dumps({}), 500
 
-    token_manager = db_helper.TokenManager(database)
+    token_manager = db_helper.TokenManager()
 
     if not token_manager.verify_token(received_token):
         return json.dumps({}), 500
 
-    if "message" not in received_json or "email" not in received_json:
-        return json.dumps({}), 500
-
-    user_DAO = db_helper.UserDAO(database)
+    user_DAO = db_helper.UserDAO()
     user_data = user_DAO.get_user_by_email(received_json["email"])
 
     if user_data is None:
         return json.dumps({""}), 500
 
-    message_DAO = db_helper.MessageDao(database)
+    message_DAO = db_helper.MessageDao()
     message_DAO.add_message(received_token, received_json["message"], received_json["email"])
 
     return json.dumps({""}), 200
