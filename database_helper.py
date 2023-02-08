@@ -79,7 +79,7 @@ class UserDAO:
         try:
             cursor = get_db().cursor()
             cursor.execute("INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (
+                [
                     user.email,
                     user.password,
                     user.firstname,
@@ -87,7 +87,7 @@ class UserDAO:
                     user.gender,
                     user.city,
                     user.country
-                )
+                ]
             )
             cursor.close()
             get_db().commit()
@@ -126,7 +126,7 @@ class UserDAO:
     def get_user_by_token(self, token: str):
         try:
             cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM User WHERE token = ?", (token))
+            cursor.execute("SELECT * FROM User WHERE token = ?", [token])
             cursor_output = cursor.fetchone()
             cursor.close()
 
@@ -150,8 +150,9 @@ class UserDAO:
     def change_user_password(self, token: str, new_password: str) -> bool:
         try:
             cursor = get_db().cursor()
-            cursor.execute("UPDATE User SET password = ? WHERE token = ?", (new_password, token))
+            cursor.execute("UPDATE User SET password = ? WHERE token = ?", [new_password, token])
             cursor.close()
+            get_db().commit()
 
             return True
 
@@ -170,8 +171,8 @@ class LoggedInUserDAO:
                     logged_in_user.email
                 ]
             )
-            get_db().commit()
             cursor.close()
+            get_db().commit()
 
             return True
 
@@ -183,7 +184,7 @@ class LoggedInUserDAO:
     def delete_logged_in_user(self, token: str) -> bool:
         try:
             cursor = get_db().cursor()
-            cursor.execute("DELETE FROM LoggedInUser WHERE token = ?", (token))
+            cursor.execute("DELETE FROM LoggedInUser WHERE token = ?", [token])
             get_db().commit()
             cursor.close()
 
@@ -197,9 +198,7 @@ class LoggedInUserDAO:
     def get_logged_in_user_by_token(self, token: str):
         try:
             cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM LoggedInUser WHERE token = ?", (token))
-            get_db().commit()
-            cursor.close()
+            cursor.execute("SELECT * FROM LoggedInUser WHERE token = ?", [token])
 
             cursor_output = cursor.fetchone()
 
@@ -207,6 +206,8 @@ class LoggedInUserDAO:
                 cursor_output[0],
                 cursor_output[1]
             )
+
+            cursor.close()
 
             return logged_in_user
 
@@ -218,9 +219,7 @@ class LoggedInUserDAO:
     def get_logged_in_user_by_email(self, email: str):
         try:
             cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM LoggedInUser WHERE email = ?", (email))
-            get_db().commit()
-
+            cursor.execute("SELECT * FROM LoggedInUser WHERE email = ?", [email])
             cursor_output = cursor.fetchone()
 
             if cursor_output is None:
@@ -230,6 +229,8 @@ class LoggedInUserDAO:
                 cursor_output[0],
                 cursor_output[1]
             )
+
+            cursor.close()
 
             return logged_in_user
 
@@ -242,14 +243,15 @@ class MessageDao:
     def get_user_messages_by_token(self, token: str):
         try:
             cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM Message WHERE token = ?", (token))
-            get_db().commit()
+            cursor.execute("SELECT * FROM Message WHERE token = ?", [token])
 
             cursor_output = cursor.fetchall()
 
             result: list = []
             for output in cursor_output:
                 result.append(output)
+
+            cursor.close()
 
             return result
 
@@ -261,14 +263,15 @@ class MessageDao:
     def get_user_messages_by_email(self, email: str):
         try:
             cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM Message WHERE email = ?", (email))
-            get_db().commit()
+            cursor.execute("SELECT * FROM Message WHERE email = ?", [email])
 
             cursor_output = cursor.fetchall()
 
             result: list = []
             for output in cursor_output:
                 result.append(output)
+
+            cursor.close()
 
             return result
 
@@ -293,14 +296,14 @@ class MessageDao:
 
             cursor = get_db().cursor()
             cursor.execute("INSERT INTO Message VALUES (?, ?, ?)",
-                (
+                [
                     recipient_user.email,
                     writer_user.email,
                     message
-                )
+                ]
             )
-            get_db().commit()
             cursor.close()
+            get_db().commit()
 
             return True
 
