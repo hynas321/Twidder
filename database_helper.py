@@ -40,6 +40,7 @@ def get_db():
 
 def disconnect():
     db = getattr(g, 'db', None)
+
     if db is not None:
         g.db.close()
         g.db = None
@@ -77,8 +78,7 @@ class Message:
 class UserDAO:
     def create_user(self, user: User) -> bool:
         try:
-            cursor = get_db().cursor()
-            cursor.execute("INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?)",
+            get_db().execute("INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?)",
                 [
                     user.email,
                     user.password,
@@ -89,7 +89,6 @@ class UserDAO:
                     user.country
                 ]
             )
-            cursor.close()
             get_db().commit()
 
             return True
@@ -99,12 +98,14 @@ class UserDAO:
 
             return False
 
-    def get_user_by_email(self, email: str):
+    def get_user_data_by_email(self, email: str):
         try:
             cursor = get_db().cursor()
             cursor.execute("SELECT * FROM User WHERE email = ?", [email])
             cursor_output = cursor.fetchone()
-            cursor.close()
+
+            if cursor_output is None:
+                return None
             
             user = User(
                 cursor_output[0],
@@ -116,6 +117,8 @@ class UserDAO:
                 cursor_output[6]
             )
 
+            cursor.close()
+
             return user
 
         except Exception as ex:
@@ -123,12 +126,23 @@ class UserDAO:
 
             return None
 
-    def get_user_by_token(self, token: str):
+    def get_user_data_by_token(self, token: str):
         try:
             cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM User WHERE token = ?", [token])
+            cursor.execute("SELECT email FROM LoggedInUser WHERE token = ?", [token])
             cursor_output = cursor.fetchone()
+
+            if cursor_output is None:
+                return None
+            user_email = cursor_output[0]
             cursor.close()
+
+            cursor = get_db().cursor()
+            cursor.execute("SELECT * FROM User WHERE email = ?", [user_email])
+            cursor_output = cursor.fetchone()
+
+            if cursor_output is None:
+                return None
 
             user = User(
                 cursor_output[0],
@@ -140,6 +154,8 @@ class UserDAO:
                 cursor_output[6]
             )
 
+            cursor.close()
+
             return user
 
         except Exception as ex:
@@ -147,11 +163,9 @@ class UserDAO:
 
             return None
 
-    def change_user_password(self, token: str, new_password: str) -> bool:
+    def change_user_password(self, email: str, new_password: str) -> bool:
         try:
-            cursor = get_db().cursor()
-            cursor.execute("UPDATE User SET password = ? WHERE token = ?", [new_password, token])
-            cursor.close()
+            get_db().execute("UPDATE User SET password = ? WHERE email = ?", [new_password, email])
             get_db().commit()
 
             return True
@@ -164,14 +178,12 @@ class UserDAO:
 class LoggedInUserDAO:
     def create_logged_in_user(self, logged_in_user: LoggedInUser) -> bool:
         try:
-            cursor = get_db().cursor()
-            cursor.execute("INSERT INTO LoggedInUser VALUES (?, ?)",
+            get_db().execute("INSERT INTO LoggedInUser VALUES (?, ?)",
                 [
                     logged_in_user.token,
                     logged_in_user.email
                 ]
             )
-            cursor.close()
             get_db().commit()
 
             return True
@@ -183,10 +195,8 @@ class LoggedInUserDAO:
 
     def delete_logged_in_user(self, token: str) -> bool:
         try:
-            cursor = get_db().cursor()
-            cursor.execute("DELETE FROM LoggedInUser WHERE token = ?", [token])
+            get_db().execute("DELETE FROM LoggedInUser WHERE token = ?", [token])
             get_db().commit()
-            cursor.close()
 
             return True
 
@@ -201,6 +211,9 @@ class LoggedInUserDAO:
             cursor.execute("SELECT * FROM LoggedInUser WHERE token = ?", [token])
 
             cursor_output = cursor.fetchone()
+
+            if cursor_output is None:
+                return None
 
             logged_in_user = LoggedInUser(
                 cursor_output[0],
@@ -240,12 +253,51 @@ class LoggedInUserDAO:
             return None
 
 class MessageDao:
+    def add_message(self, token: str, message: str, email: str) -> bool:
+        try:
+            user_dao = UserDAO()
+
+            writer_user = user_dao.get_user_data_by_token(token)
+
+            if writer_user is None:
+                return False
+
+            recipient_user = user_dao.get_user_data_by_email(email)
+
+            if recipient_user is None:
+                return False
+
+            get_db().execute("INSERT INTO Message VALUES (?, ?, ?)",
+                [
+                    recipient_user.email,
+                    writer_user.email,
+                    message
+                ]
+            )
+            get_db().commit()
+
+            return True
+
+        except Exception as ex:
+            print(ex)
+
+            return False
+    
     def get_user_messages_by_token(self, token: str):
         try:
+            logged_in_user_DAO = LoggedInUserDAO()
+            logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(token)
+
+            if logged_in_user is None:
+                return None
+
             cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM Message WHERE token = ?", [token])
+            cursor.execute("SELECT * FROM Message WHERE email = ?", [logged_in_user.email])
 
             cursor_output = cursor.fetchall()
+
+            if cursor_output is None:
+                return None
 
             result: list = []
             for output in cursor_output:
@@ -267,6 +319,9 @@ class MessageDao:
 
             cursor_output = cursor.fetchall()
 
+            if cursor_output is None:
+                return None
+
             result: list = []
             for output in cursor_output:
                 result.append(output)
@@ -279,38 +334,6 @@ class MessageDao:
             print(ex)
 
             return None
-
-    def add_message(self, token: str, message: str, email: str) -> bool:
-        try:
-            user_dao = UserDAO()
-
-            writer_user = user_dao.get_user_by_token(token)
-
-            if writer_user is None:
-                return False
-
-            recipient_user = user_dao.get_user_by_email(email)
-
-            if recipient_user is None:
-                return False
-
-            cursor = get_db().cursor()
-            cursor.execute("INSERT INTO Message VALUES (?, ?, ?)",
-                [
-                    recipient_user.email,
-                    writer_user.email,
-                    message
-                ]
-            )
-            cursor.close()
-            get_db().commit()
-
-            return True
-
-        except Exception as ex:
-            print(ex)
-
-            return False
         
 class TokenManager:
     def generate_token(self) -> str:
