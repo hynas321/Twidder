@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 @app.route("/", methods = ["GET"])
 def root():
-    return "", 200
+    return app.send_static_file("client.html"), 200
 
 @app.teardown_request
 def teardown(exception):
@@ -18,16 +18,16 @@ def sign_in():
     received_json = request.get_json()
 
     if "email" not in received_json or "password" not in received_json:
-        return "", 500
+        return "", 501
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_email(received_json["email"])
 
     if user is None:
-        return "", 501
+        return "", 502
 
     if user.password != received_json["password"]:
-        return "", 502
+        return "", 503
 
     token_manager = db_helper.TokenManager()
     generated_token = token_manager.generate_token()
@@ -37,7 +37,7 @@ def sign_in():
     is_logged_in_user_created = logged_in_user_DAO.create_logged_in_user(logged_in_user)
 
     if not is_logged_in_user_created:
-        return "", 503
+        return "", 504
 
     return json.dumps({"token": generated_token}), 200
 
@@ -50,12 +50,12 @@ def sign_up():
         "gender" not in received_json or "city" not in received_json or
         "country" not in received_json):
 
-        return "", 500
+        return "", 501
 
     minimum_password_length = 6
 
     if len(received_json["password"]) < minimum_password_length:
-        return "", 501
+        return "", 502
 
     user = db_helper.User(
         received_json["email"],
@@ -71,7 +71,7 @@ def sign_up():
     is_user_created = user_DAO.create_user(user)
 
     if not is_user_created:
-        return "", 502
+        return "", 503
 
     return "", 200
 
@@ -80,18 +80,18 @@ def sign_out():
     received_token = request.headers.get("token")
 
     if received_token is None:
-        return "", 500
+        return "", 501
 
     token_manager = db_helper.TokenManager()
-    
+
     if not token_manager.verify_token(received_token):
-        return "", 501
+        return "", 502
 
     logged_in_user_DAO = db_helper.LoggedInUserDAO()
     is_logged_in_user_deleted: bool = logged_in_user_DAO.delete_logged_in_user(received_token)
 
     if not is_logged_in_user_deleted:
-        return "", 502
+        return "", 503
 
     return "", 200
 
@@ -102,26 +102,26 @@ def change_password():
 
     if (received_token is None or
         "old_password" not in received_json or "new_password" not in received_json):
-        return "", 500
+        return "", 501
 
     token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
-        return "", 501
+        return "", 502
     
     user_DAO = db_helper.UserDAO()
     user: db_helper.User = user_DAO.get_user_data_by_token(received_token)
 
     if user is None:
-        return "", 502
+        return "", 503
 
     if user.password != received_json["old_password"]:
-        return "", 503
+        return "", 504
 
     is_password_changed: bool = user_DAO.change_user_password(user.email, received_json["new_password"])
 
     if not is_password_changed:
-        return "", 504
+        return "", 505
 
     return "", 200
 
@@ -130,18 +130,18 @@ def get_user_data_by_token():
     received_token = request.headers.get("token")
 
     if received_token is None:
-        return "", 500
+        return "", 501
 
     token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
-        return "", 501
+        return "", 502
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_token(received_token)
 
     if user is None:
-        return "", 502
+        return "", 503
 
     user_data_without_password: dict = {
         "email": user.email,
@@ -159,18 +159,18 @@ def get_user_data_by_email(email: str):
     received_token = request.headers.get("token")
 
     if received_token is None:
-        return "", 500
+        return "", 501
 
     token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
-        return "", 501
+        return "", 502
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_email(email)
 
     if user is None:
-        return "", 502
+        return "", 503
 
     user_data_without_password: dict = {
         "email": user.email,
@@ -188,38 +188,48 @@ def get_user_messages_by_token():
     received_token = request.headers.get("token")
 
     if received_token is None:
-        return "", 500
+        return "", 501
 
     token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
-        return "", 501
+        return "", 502
 
     message_DAO = db_helper.MessageDao()
     messages = message_DAO.get_user_messages_by_token(received_token)
 
     if messages is None:
-        return "", 502
+        return "", 503
+    
+    messages_output: list = []
 
-    return json.dumps({"messages": messages}), 200
+    for message in messages:
+        messages_output.append({
+            "writer": message[1],
+            "content": message[2]
+        })
+
+    print(messages_output)
+
+    return json.dumps({"messages": messages_output}), 200
 
 @app.route("/get-user-messages-by-email/<email>", methods=["GET"])
 def get_user_messages_by_email(email: str):
     received_token = request.headers.get("token")
 
     if received_token is None:
-        return "", 500
+        return "", 501
 
     token_manager = db_helper.TokenManager()
     
     if not token_manager.verify_token(received_token):
-        return "", 501
+        return "", 502
     
     message_DAO = db_helper.MessageDao()
     messages = message_DAO.get_user_messages_by_email(email)
 
     if messages is None:
-        return "", 502
+        return "", 503
 
     return json.dumps({"messages": messages}), 200
 
@@ -230,18 +240,18 @@ def post_message():
 
     if (received_token is None or 
         "message" not in received_json or "email" not in received_json):
-        return "", 500
+        return "", 501
 
     token_manager = db_helper.TokenManager()
 
     if not token_manager.verify_token(received_token):
-        return "", 501
+        return "", 502
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_email(received_json["email"])
 
     if user is None:
-        return "", 502
+        return "", 503
 
     message_DAO = db_helper.MessageDao()
     message_DAO.add_message(received_token, received_json["message"], received_json["email"])
