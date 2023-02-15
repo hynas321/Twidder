@@ -329,7 +329,7 @@ var changePassword = function(changePasswordFormData) {
 
     const request = new XMLHttpRequest();
 
-    request.open("POST", "/change-password", true);
+    request.open("PUT", "/change-password", true);
     request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     request.setRequestHeader("token", tokenValue);
     request.send(JSON.stringify(passwords))

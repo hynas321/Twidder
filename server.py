@@ -95,7 +95,7 @@ def sign_out():
 
     return "", 200
 
-@app.route("/change-password", methods=["POST"])
+@app.route("/change-password", methods=["PUT"])
 def change_password():
     received_token = request.headers.get("token")
     received_json = request.get_json()
