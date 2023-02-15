@@ -1,5 +1,4 @@
 const minPasswordLength = 6;
-const maxPasswordLength = 12;
 
 const displayProperty = {
     block: "block",
@@ -19,7 +18,7 @@ const tabs = {
 
 const differentPasswordsText = "Passwords are not the same";
 const incorrectPasswordLengthText = 
-    `Incorrect password length, allowed lengths: min = ${minPasswordLength} and max = ${maxPasswordLength}`;
+    `Incorrect password length, allowed min length = ${minPasswordLength}`;
 
 let dataRetrieved = false;
 
@@ -250,7 +249,7 @@ var signUp = function(signUpFormData) {
 }
 
 var isPasswordLengthCorrect = function(passwordString) {
-    if (passwordString.length < minPasswordLength || passwordString.length > maxPasswordLength) {
+    if (passwordString.length < minPasswordLength) {
         return false;
     }
 
@@ -354,13 +353,34 @@ var changePassword = function(changePasswordFormData) {
     }
 }
 
-var postMessageToWall = function(ownPostWall) {
+var postMessageToWall = async function(ownPostWall) {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    let email;
-    let recipientEmail;
+    let emails = {
+        email,
+        recipientEmail
+    };
     let postWall;
     let textArea;
     
+    var _getUserDataAsync = async function() {
+        const request = new XMLHttpRequest();
+
+        request.open("GET", "/get-user-data-by-token", true);
+        request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        request.setRequestHeader("token", tokenValue);
+        request.send(JSON.stringify({request: "get-user-data-by-token"}));
+        request.onreadystatechange = async function() {
+            if (request.readyState == 4) {
+                if (request.status == 200) {
+                    const response = JSON.parse(request.response);
+                    emails.email = response.email;
+
+                    return await emails;
+                }
+            }
+        }
+    }
+
     if (ownPostWall) {
         postWall = document.getElementById("post-wall");
         textArea = document.getElementById("text-area");
@@ -369,22 +389,7 @@ var postMessageToWall = function(ownPostWall) {
             return;
         }
 
-        const request = new XMLHttpRequest();
-
-        request.open("GET", "/get-user-data-by-token", true);
-        request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        request.setRequestHeader("token", tokenValue);
-        request.send(JSON.stringify({request: "get-user-data-by-token"}));
-        request.onreadystatechange = function() {
-            if (request.readyState == 4) {
-                if (request.status == 200) {
-                    const response = JSON.parse(request.response);
-
-                    email = response.email;
-                    recipientEmail = email;
-                }
-            }
-        }
+        emails = await _getUserDataAsync();
     }
     else {
         postWall = document.getElementById("searched-post-wall");
@@ -393,26 +398,50 @@ var postMessageToWall = function(ownPostWall) {
         if (textArea.value == "") {
             return;
         }
+    
+        var getUserDataByTokenAsync = async function() {
+            const request = new XMLHttpRequest();
 
-        const request = new XMLHttpRequest();
+            request.open("GET", "/get-user-data-by-token", true);
+            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            request.setRequestHeader("token", tokenValue);
+            request.send(JSON.stringify({request: "get-user-data-by-token"}));
+            request.onreadystatechange = async function() {
+                if (request.readyState == 4) {
+                    if (request.status == 200) {
+                        const response = JSON.parse(request.response);
+                        const emails = {
+                            email: response.email,
+                            recipientEmail: document.getElementById("searchedEmail").value
+                        };
 
-        request.open("GET", "/get-user-data-by-token", true);
-        request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        request.setRequestHeader("token", tokenValue);
-        request.send(JSON.stringify({request: "get-user-data-by-token"}));
-        request.onreadystatechange = function() {
-            if (request.readyState == 4) {
-                if (request.status == 200) {
-                    const response = JSON.parse(request.response);
-
-                    email = response.email;
-                    recipientEmail = document.getElementById("searchedEmail").value;
+                        return await emails
+                    }
                 }
             }
         }
+
+        emails = await getUserDataByTokenAsync();
     }
 
+    const postMessageBody = {
+        message: textArea.innerHTML,
+        email: recipientEmail
+    };
 
+    const request = new XMLHttpRequest();
+
+    request.open("POST", "/post-message", true);
+    request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    request.setRequestHeader("token", tokenValue);
+    request.send(JSON.stringify(postMessageBody));
+    request.onreadystatechange = function() {
+        if (request.readyState == 4) {
+            if (request.status == 200) {
+                
+            }
+        }
+    }
 }
 
 var displayPostWall = function(ownPostWall, email) {
