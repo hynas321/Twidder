@@ -178,10 +178,38 @@ var signIn = function(signInFormData) {
                 localStorage.setItem(localStorageKey.token, jsonResponse.token);
                 displayProfileView();
             }
+            else if (request.status == 400) {
+                displayStatusMessage(
+                    statusMessageElement,
+                    "Missing credentials",
+                    false
+                );
+            }
+            else if (request.status == 404) {
+                displayStatusMessage(
+                    statusMessageElement,
+                    "User not found",
+                    false
+                );
+            }
+            else if (request.status == 401) {
+                displayStatusMessage(
+                    statusMessageElement,
+                    "Incorrect credentials",
+                    false
+                );
+            }
+            else if (request.status == 500) {
+                displayStatusMessage(
+                    statusMessageElement,
+                    "Unexpected error, try again",
+                    false
+                );
+            }
             else {
                 displayStatusMessage(
                     statusMessageElement,
-                    "Sign in error",
+                    "Unexpected error, try again",
                     false
                 );
             }
@@ -230,17 +258,31 @@ var signUp = function(signUpFormData) {
     request.send(JSON.stringify(userDataObject));
     request.onreadystatechange = function() {
         if (request.readyState == 4) {
-            if (request.status == 200) {
+            if (request.status == 201) {
                 displayStatusMessage(
                     statusMessageElement,
                     "Account created successfully",
                     true
                 )
             }
+            else if (request.status == 400) {
+                displayStatusMessage(
+                    statusMessageElement,
+                    "Missing credentials",
+                    false
+                );               
+            }
+            else if (request.status == 409) {
+                displayStatusMessage(
+                    statusMessageElement,
+                    "User already exists",
+                    false
+                );       
+            }
             else {
                 displayStatusMessage(
                     statusMessageElement,
-                    "Sign up error",
+                    "Unexpected error, try again",
                     false
                 );
             }
@@ -340,6 +382,34 @@ var changePassword = function(changePasswordFormData) {
                     accountTabStatusMessageElement,
                     "Password changed successfully",
                     true
+                );
+            }
+            else if (request.status == 400) {
+                displayStatusMessage(
+                    accountTabStatusMessageElement,
+                    "Missing input",
+                    false
+                );
+            }
+            else if (request.status == 401) {
+                displayStatusMessage(
+                    accountTabStatusMessageElement,
+                    "You are not logged in, try to sign in again",
+                    false
+                );
+            }
+            else if (request.status == 404) {
+                displayStatusMessage(
+                    accountTabStatusMessageElement,
+                    "User not found, try to sign in again",
+                    false
+                );
+            }
+            else if (request.status == 409) {
+                displayStatusMessage(
+                    accountTabStatusMessageElement,
+                    "Incorrect password input(s): incorrect old password or the new password is the same as the old",
+                    false
                 );
             }
             else {

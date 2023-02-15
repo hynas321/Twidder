@@ -52,11 +52,6 @@ def sign_up():
 
         return "", 400
 
-    minimum_password_length = 6
-
-    if len(received_json["password"]) < minimum_password_length:
-        return "", 401
-
     user = db_helper.User(
         received_json["email"],
         received_json["password"],
@@ -79,12 +74,9 @@ def sign_up():
 def sign_out():
     received_token = request.headers.get("token")
 
-    if received_token is None:
-        return "", 401
-
     token_manager = db_helper.TokenManager()
 
-    if not token_manager.verify_token(received_token):
+    if received_token is None or not token_manager.verify_token(received_token):
         return "", 401
 
     logged_in_user_DAO = db_helper.LoggedInUserDAO()
@@ -100,16 +92,13 @@ def change_password():
     received_token = request.headers.get("token")
     received_json = request.get_json()
 
-    if received_token is None:
+    token_manager = db_helper.TokenManager()
+
+    if received_token is None or not token_manager.verify_token(received_token):
         return "", 401
 
     if "old_password" not in received_json or "new_password" not in received_json:
         return "", 400
-
-    token_manager = db_helper.TokenManager()
-    
-    if not token_manager.verify_token(received_token):
-        return "", 401
     
     user_DAO = db_helper.UserDAO()
     user: db_helper.User = user_DAO.get_user_data_by_token(received_token)
@@ -134,12 +123,9 @@ def change_password():
 def get_user_data_by_token():
     received_token = request.headers.get("token")
 
-    if received_token is None:
-        return "", 401
-
     token_manager = db_helper.TokenManager()
-    
-    if not token_manager.verify_token(received_token):
+
+    if received_token is None or not token_manager.verify_token(received_token):
         return "", 401
 
     user_DAO = db_helper.UserDAO()
@@ -163,12 +149,9 @@ def get_user_data_by_token():
 def get_user_data_by_email(email: str):
     received_token = request.headers.get("token")
 
-    if received_token is None:
-        return "", 401
-
     token_manager = db_helper.TokenManager()
-    
-    if not token_manager.verify_token(received_token):
+
+    if received_token is None or not token_manager.verify_token(received_token):
         return "", 401
 
     user_DAO = db_helper.UserDAO()
@@ -192,12 +175,9 @@ def get_user_data_by_email(email: str):
 def get_user_messages_by_token():
     received_token = request.headers.get("token")
 
-    if received_token is None:
-        return "", 401
-
     token_manager = db_helper.TokenManager()
-    
-    if not token_manager.verify_token(received_token):
+
+    if received_token is None or not token_manager.verify_token(received_token):
         return "", 401
 
     message_DAO = db_helper.MessageDao()
@@ -220,12 +200,9 @@ def get_user_messages_by_token():
 def get_user_messages_by_email(email: str):
     received_token = request.headers.get("token")
 
-    if received_token is None:
-        return "", 401
-
     token_manager = db_helper.TokenManager()
-    
-    if not token_manager.verify_token(received_token):
+
+    if received_token is None or not token_manager.verify_token(received_token):
         return "", 401
     
     message_DAO = db_helper.MessageDao()
@@ -241,16 +218,13 @@ def post_message():
     received_token = request.headers.get("token")
     received_json = request.get_json()
 
-    if received_token is None:
+    token_manager = db_helper.TokenManager()
+
+    if received_token is None or not token_manager.verify_token(received_token):
         return "", 401
 
     if "message" not in received_json or "email" not in received_json:
         return "", 400
-
-    token_manager = db_helper.TokenManager()
-
-    if not token_manager.verify_token(received_token):
-        return "", 401
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_email(received_json["email"])
