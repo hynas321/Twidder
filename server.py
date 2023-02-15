@@ -71,7 +71,7 @@ def sign_up():
     is_user_created = user_DAO.create_user(user)
 
     if not is_user_created:
-        return "", 500
+        return "", 409
 
     return "", 201
 
@@ -121,7 +121,7 @@ def change_password():
         return "", 409
 
     if received_json["new_password"] == received_json["old_password"]:
-        return 409
+        return 400
 
     is_password_changed: bool = user_DAO.change_user_password(user.email, received_json["new_password"])
 
