@@ -121,7 +121,7 @@ def change_password():
         return "", 409
 
     if received_json["new_password"] == received_json["old_password"]:
-        return 400
+        return "", 409
 
     is_password_changed: bool = user_DAO.change_user_password(user.email, received_json["new_password"])
 
@@ -203,7 +203,7 @@ def get_user_messages_by_token():
     message_DAO = db_helper.MessageDao()
     messages = message_DAO.get_user_messages_by_token(received_token)
 
-    if messages is None:
+    if len(messages) == 0:
         return "", 404
     
     messages_output: list = []
@@ -231,7 +231,7 @@ def get_user_messages_by_email(email: str):
     message_DAO = db_helper.MessageDao()
     messages = message_DAO.get_user_messages_by_email(email)
 
-    if messages is None:
+    if len(messages) == 0:
         return "", 404
 
     return json.dumps({"messages": messages}), 200
