@@ -10,32 +10,6 @@ def get_db():
     if db is None:
         db = g.db = sqlite3.connect(DATABASE_URI)
 
-        db.execute(
-            """CREATE TABLE IF NOT EXISTS User(
-                    email VARCHAR(60) PRIMARY KEY,
-                    password VARCHAR(60),
-                    firstname VARCHAR(60),
-                    familyname VARCHAR(60),
-                    gender VARCHAR(60),
-                    city VARCHAR(60),
-                    country VARCHAR(60)
-                )"""
-        )
-
-        db.execute(
-            """CREATE TABLE IF NOT EXISTS LoggedInUser(
-                    token VARCHAR(60) PRIMARY KEY,
-                    email VARCHAR(60)
-                )"""
-        )
-
-        db.execute(
-            """CREATE TABLE IF NOT EXISTS Message(
-                email VARCHAR(60) PRIMARY KEY,
-                writer VARCHAR(60),
-                content VARCHAR(240)
-            )"""
-        )
     return db
 
 def disconnect():
