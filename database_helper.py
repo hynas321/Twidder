@@ -1,6 +1,8 @@
 import sqlite3
 import uuid
+import re
 from flask import g
+from enum import Enum
 
 DATABASE_URI = "database.db"
 
@@ -79,7 +81,7 @@ class UserDAO:
             cursor_output = cursor.fetchone()
 
             if cursor_output is None:
-                return None
+                return DatabaseOutput.NONE
             
             user = User(
                 cursor_output[0],
@@ -98,7 +100,7 @@ class UserDAO:
         except Exception as ex:
             print(ex)
 
-            return None
+            return DatabaseOutput.ERROR
 
     def get_user_data_by_token(self, token: str):
         try:
@@ -107,7 +109,8 @@ class UserDAO:
             cursor_output = cursor.fetchone()
 
             if cursor_output is None:
-                return None
+                return DatabaseOutput.NONE
+
             user_email = cursor_output[0]
             cursor.close()
 
@@ -116,7 +119,7 @@ class UserDAO:
             cursor_output = cursor.fetchone()
 
             if cursor_output is None:
-                return None
+                return DatabaseOutput.NONE
 
             user = User(
                 cursor_output[0],
@@ -135,7 +138,7 @@ class UserDAO:
         except Exception as ex:
             print(ex)
 
-            return None
+            return DatabaseOutput.ERROR
 
     def change_user_password(self, email: str, new_password: str) -> bool:
         try:
@@ -187,7 +190,7 @@ class LoggedInUserDAO:
             cursor_output = cursor.fetchone()
 
             if cursor_output is None:
-                return None
+                return DatabaseOutput.NONE
 
             logged_in_user = LoggedInUser(
                 cursor_output[0],
@@ -201,7 +204,7 @@ class LoggedInUserDAO:
         except Exception as ex:
             print(ex)
 
-            return None
+            return DatabaseOutput.ERROR
 
     def get_logged_in_user_by_email(self, email: str):
         try:
@@ -210,7 +213,7 @@ class LoggedInUserDAO:
             cursor_output = cursor.fetchone()
 
             if cursor_output is None:
-                return None
+                return DatabaseOutput.NONE
 
             logged_in_user = LoggedInUser(
                 cursor_output[0],
@@ -224,7 +227,7 @@ class LoggedInUserDAO:
         except Exception as ex:
             print(ex)
 
-            return None
+            return DatabaseOutput.ERROR
 
 class MessageDao:
     def add_message(self, token: str, message: str, email: str) -> bool:
@@ -233,12 +236,12 @@ class MessageDao:
 
             writer_user = user_dao.get_user_data_by_token(token)
 
-            if writer_user is None:
+            if writer_user is DatabaseOutput.NONE:
                 return False
 
             recipient_user = user_dao.get_user_data_by_email(email)
 
-            if recipient_user is None:
+            if recipient_user is DatabaseOutput.NONE:
                 return False
 
             get_db().execute("INSERT INTO Message VALUES (?, ?, ?)",
@@ -262,16 +265,16 @@ class MessageDao:
             logged_in_user_DAO = LoggedInUserDAO()
             logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(token)
 
-            if logged_in_user is None:
-                return None
+            if logged_in_user is DatabaseOutput.NONE:
+                return DatabaseOutput.NONE
 
             cursor = get_db().cursor()
             cursor.execute("SELECT * FROM Message WHERE email = ?", [logged_in_user.email])
 
             cursor_output = cursor.fetchall()
 
-            if cursor_output is None:
-                return None
+            if len(cursor_output) == 0:
+                return DatabaseOutput.NONE
 
             result: list = []
             for output in cursor_output:
@@ -284,7 +287,7 @@ class MessageDao:
         except Exception as ex:
             print(ex)
 
-            return None
+            return DatabaseOutput.ERROR
 
     def get_user_messages_by_email(self, email: str):
         try:
@@ -293,8 +296,8 @@ class MessageDao:
 
             cursor_output = cursor.fetchall()
 
-            if cursor_output is None:
-                return None
+            if len(cursor_output) == 0:
+                return DatabaseOutput.NONE
 
             result: list = []
             for output in cursor_output:
@@ -307,7 +310,7 @@ class MessageDao:
         except Exception as ex:
             print(ex)
 
-            return None
+            return DatabaseOutput.ERROR
         
 class TokenManager:
     def generate_token(self) -> str:
@@ -317,8 +320,29 @@ class TokenManager:
         logged_in_user_DAO = LoggedInUserDAO()
         logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(token)
 
-        if logged_in_user is None:
+        if logged_in_user is DatabaseOutput.NONE:
             return False
         
         return True
+
+class InputManager:
+    def verify_credentials(self, email, password) -> bool:
+        return self.verify_email_format(email) and self.verify_password_length(password)
+
+    def verify_email_format(self, email) -> bool:
+        email_format = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        return re.match(email_format, email) is not None
+    
+    def verify_password_length(self, password) -> bool:
+        min_password_length = 6
+
+        return len(password) >= min_password_length
+
+    def verify_string_not_empty(self, string) -> bool:
+        return len(string.strip()) != 0
+
+class DatabaseOutput(Enum):
+    NONE = 1,
+    ERROR = 2,
 

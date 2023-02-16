@@ -17,14 +17,24 @@ def teardown(exception):
 def sign_in():
     received_json = request.get_json()
 
-    if "email" not in received_json or "password" not in received_json:
+    if ("email" not in received_json or "password" not in received_json
+        or len(received_json) != 2):
+        return "", 400
+
+    input_manager = db_helper.InputManager()
+    are_credentials_correct = input_manager.verify_credentials(received_json["email"], received_json["password"])
+
+    if not are_credentials_correct:
         return "", 400
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_email(received_json["email"])
 
-    if user is None:
+    if user is db_helper.DatabaseOutput.NONE:
         return "", 404
+
+    if user is db_helper.DatabaseOutput.ERROR:
+        return "", 500
 
     if user.password != received_json["password"]:
         return "", 401
@@ -48,8 +58,14 @@ def sign_up():
     if ("email" not in received_json or "password" not in received_json or
         "firstname" not in received_json or "familyname" not in received_json or
         "gender" not in received_json or "city" not in received_json or
-        "country" not in received_json):
+        "country" not in received_json or len(received_json) != 7):
 
+        return "", 400
+
+    input_manager = db_helper.InputManager()
+    are_credentials_correct = input_manager.verify_credentials(received_json["email"], received_json["password"])
+
+    if not are_credentials_correct:
         return "", 400
 
     user = db_helper.User(
@@ -75,8 +91,9 @@ def sign_out():
     received_token = request.headers.get("token")
 
     token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
 
-    if received_token is None or not token_manager.verify_token(received_token):
+    if received_token is None or not is_token_correct:
         return "", 401
 
     logged_in_user_DAO = db_helper.LoggedInUserDAO()
@@ -93,18 +110,30 @@ def change_password():
     received_json = request.get_json()
 
     token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
 
-    if received_token is None or not token_manager.verify_token(received_token):
+    if received_token is None or not is_token_correct:
         return "", 401
 
-    if "old_password" not in received_json or "new_password" not in received_json:
+    if ("old_password" not in received_json or "new_password" not in received_json or
+        len(received_json) != 2):
+        return "", 400
+
+    input_verifier = db_helper.InputManager()
+    is_old_password_correct = input_verifier.verify_password_length(received_json["old_password"])
+    is_new_password_correct = input_verifier.verify_password_length(received_json["new_password"])
+
+    if not is_old_password_correct or not is_new_password_correct:
         return "", 400
     
     user_DAO = db_helper.UserDAO()
     user: db_helper.User = user_DAO.get_user_data_by_token(received_token)
 
-    if user is None:
+    if user is db_helper.DatabaseOutput.NONE:
         return "", 404
+    
+    if user is db_helper.DatabaseOutput.ERROR:
+        return "", 500
 
     if user.password != received_json["old_password"]:
         return "", 409
@@ -124,15 +153,19 @@ def get_user_data_by_token():
     received_token = request.headers.get("token")
 
     token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
 
-    if received_token is None or not token_manager.verify_token(received_token):
+    if received_token is None or not is_token_correct:
         return "", 401
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_token(received_token)
 
-    if user is None:
+    if user is db_helper.DatabaseOutput.NONE:
         return "", 404
+
+    if user is db_helper.DatabaseOutput.ERROR:
+        return "", 500
 
     user_data_without_password: dict = {
         "email": user.email,
@@ -150,15 +183,19 @@ def get_user_data_by_email(email: str):
     received_token = request.headers.get("token")
 
     token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
 
-    if received_token is None or not token_manager.verify_token(received_token):
+    if received_token is None or not is_token_correct:
         return "", 401
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_email(email)
 
-    if user is None:
+    if user is db_helper.DatabaseOutput.NONE:
         return "", 404
+
+    if user is db_helper.DatabaseOutput.ERROR:
+        return "", 500
 
     user_data_without_password: dict = {
         "email": user.email,
@@ -176,16 +213,20 @@ def get_user_messages_by_token():
     received_token = request.headers.get("token")
 
     token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
 
-    if received_token is None or not token_manager.verify_token(received_token):
+    if received_token is None or not is_token_correct:
         return "", 401
 
     message_DAO = db_helper.MessageDao()
     messages = message_DAO.get_user_messages_by_token(received_token)
 
-    if len(messages) == 0:
+    if messages is db_helper.DatabaseOutput.NONE:
         return "", 404
     
+    if messages is db_helper.DatabaseOutput.ERROR:
+        return "", 500
+
     messages_output: list = []
 
     for message in messages:
@@ -201,15 +242,19 @@ def get_user_messages_by_email(email: str):
     received_token = request.headers.get("token")
 
     token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
 
-    if received_token is None or not token_manager.verify_token(received_token):
+    if received_token is None or not is_token_correct:
         return "", 401
     
     message_DAO = db_helper.MessageDao()
     messages = message_DAO.get_user_messages_by_email(email)
 
-    if len(messages) == 0:
+    if messages is db_helper.DatabaseOutput.NONE:
         return "", 404
+
+    if messages is db_helper.DatabaseOutput.ERROR:
+        return "", 500
 
     return json.dumps({"messages": messages}), 200
 
@@ -219,18 +264,27 @@ def post_message():
     received_json = request.get_json()
 
     token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
 
-    if received_token is None or not token_manager.verify_token(received_token):
+    if received_token is None or not is_token_correct:
         return "", 401
 
-    if "message" not in received_json or "email" not in received_json:
+    input_manager = db_helper.InputManager()
+    input_manager.verify_string_not_empty(received_json["message"])
+
+    if ("message" not in received_json or "email" not in received_json or
+        not input_manager.verify_string_not_empty(received_json["message"]) or
+        len(received_json) != 2):
         return "", 400
 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_email(received_json["email"])
 
-    if user is None:
+    if user is db_helper.DatabaseOutput.NONE:
         return "", 404
+
+    if user is db_helper.DatabaseOutput.ERROR:
+        return "", 500
 
     message_DAO = db_helper.MessageDao()
     message_DAO.add_message(received_token, received_json["message"], received_json["email"])
