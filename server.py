@@ -39,7 +39,7 @@ def sign_in():
     if not is_logged_in_user_created:
         return "", 500
 
-    return json.dumps({"token": generated_token}), 200
+    return json.dumps({"token": generated_token}), 201
 
 @app.route("/sign-up", methods = ["POST"])
 def sign_up():
@@ -66,11 +66,11 @@ def sign_up():
     is_user_created = user_DAO.create_user(user)
 
     if not is_user_created:
-        return "", 409
+        return "", 200
 
     return "", 201
 
-@app.route("/sign-out", methods=["POST"])
+@app.route("/sign-out", methods=["DELETE"])
 def sign_out():
     received_token = request.headers.get("token")
 
