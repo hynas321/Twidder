@@ -6,7 +6,7 @@
         <script id="welcomeview" type="text/view">
         <div id="welcomeview-layout">
             <img id="Bild" src="wimage.png"> 
-            <form id="sign-in" onsubmit="signIn(this); return false;"" >  <!-- generate sign-in and sign-out form -->  <!-- form need two attributes-->
+            <form id="sign-in" onsubmit="accountManager.signIn(this); return false;"" >  <!-- generate sign-in and sign-out form -->  <!-- form need two attributes-->
                 <div><h3>Sign-In!</h3></div>
                 <div class="form-container">
                     <label for="signInEmail" class="form-label">E-Mail</label> <input id="signInEmail" class="form-input" type="email" required>  <!--With the command "label it is possible to click on buttons. "for" in the label have to match the "id" in the input field. The connection is created.-->
@@ -16,7 +16,7 @@
                     <input name="btn-sign-in" class="form-input" type="submit" value="Sign in"> 
                 </div>
             </form>
-            <form id="sign-up" onSubmit="signUp(this); return false;">
+            <form id="sign-up" onSubmit="accountManager.signUp(this); return false;">
                 <div> <h3> Sign-Up! </h3></div>
                 <div class="form-container">
                     <label for="firstName" class="form-label"> First name </label>  <input id="firstName" class="form-input" type="text" required> 
@@ -41,9 +41,9 @@
         <script type="text/view" id="profileview">
             <div class="center-grid">
 				<div class="tab-buttons">
-				    <button id="btn-home-tab" class="tab-button" onclick="displayHomeTab(); setActiveButton('home-tab');">Home</button>
-				    <button id="btn-account-tab" class="tab-button" onclick="displayAccountTab(); setActiveButton('account-tab');">Account</button>
-				    <button id="btn-browse-tab" class="tab-button" onclick="displayBrowseTab(); setActiveButton('browse-tab');">Browse</button>
+				    <button id="btn-home-tab" class="tab-button" onclick="tabManager.displayHomeTab(); tabManager.setActiveButton('home-tab');">Home</button>
+				    <button id="btn-account-tab" class="tab-button" onclick="tabManager.displayAccountTab(); tabManager.setActiveButton('account-tab');">Account</button>
+				    <button id="btn-browse-tab" class="tab-button" onclick="tabManager.displayBrowseTab(); tabManager.setActiveButton('browse-tab');">Browse</button>
 				</div>
 				<div id="home-tab" class="tab">
 					<div id="personal-info">
@@ -61,8 +61,8 @@
                     <div id="post-message" class="center-text">
                         <h2>Post wall</h2>
                         <textarea id="text-area"></textArea><br>
-                        <button id="btn-post" class="submit-button" onclick="postMessageToWall(true);">Post</button>
-                        <button id="btn-home-refresh" class="refresh-button" onclick="refreshPostWall('home-tab')">Refresh</button>
+                        <button id="btn-post" class="submit-button" onclick="postWallManager.postMessageToWall(true);">Post</button>
+                        <button id="btn-home-refresh" class="refresh-button" onclick="postWallManager.refreshPostWall('home-tab')">Refresh</button>
                     </div>
                     <div class="post-wall">
                         <text id="post-wall"></text>
@@ -74,7 +74,7 @@
                         <h2>Change password</h2>
                     </div>
                     <div class="center-text">
-                        <form id="change-password-form" onsubmit="changePassword(this); return false;">
+                        <form id="change-password-form" onsubmit="accountManager.changePassword(this); return false;">
                             <div><label for="oldPassword">Old password</label><br/><input id="oldPassword" type="password" required></div>
                             <div><label for="newPassword">New password</label><br/><input id="newPassword" type="password" required></div>
                             <div><label for="repeatedNewPassword">New password</label><br/><input id="repeatedNewPassword" type="password" required></div>
@@ -83,7 +83,7 @@
                     </div>
                     <div class="center-text">
                         <h2>Sign out</h2>
-                        <button id="btn-sign-out" class="sign-out-button" onclick="signOut()" class="btn-tab">Sign out</button>
+                        <button id="btn-sign-out" class="sign-out-button" onclick="accountManager.signOut()" class="btn-tab">Sign out</button>
                         <div id="account-tab-status-message" class="error-message">Status message</div>
                     </div>
                 </div>
@@ -91,7 +91,7 @@
                     <div class="center-text">
                         <h1>Browse tab</h1>
                         <h2>Search user</h2>
-                        <form id="browse-user-account" onsubmit="displaySearchedUserProfile(this); return false;">
+                        <form id="browse-user-account" onsubmit="userProfileManager.displaySearchedUserProfile(this); return false;">
                             <div><label for="searchedEmail">Email</label><br/><input id="searchedEmail" type="email" required></div>
                             <input id="btn-browse-messages" class="submit-button" type="submit" value="Search">
                         </form>
@@ -111,8 +111,8 @@
                         <div id="searched-post-message" class="center-text">
                             <h2>Post a new message</h2>
                             <textarea id="searched-text-area"></textArea><br>
-                            <button id="btn-searched-post" class="submit-button" onclick="postMessageToWall(false);">Post</button>
-                            <button id="btn-browse-refresh" class="refresh-button" onclick="refreshPostWall('browse-tab')">Refresh</button>
+                            <button id="btn-searched-post" class="submit-button" onclick="postWallManager.postMessageToWall(false);">Post</button>
+                            <button id="btn-browse-refresh" class="refresh-button" onclick="postWallManager.refreshPostWall('browse-tab')">Refresh</button>
                         </div>
                         <div class="post-wall">
                             <div id="searched-post-wall"></div>
