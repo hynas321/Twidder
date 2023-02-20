@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS LoggedInUser(
 )
 
 CREATE TABLE IF NOT EXISTS Message(
-    email VARCHAR(60),
+    recipient VARCHAR(60),
     writer VARCHAR(60),
     content VARCHAR(240)
 )

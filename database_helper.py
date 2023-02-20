@@ -230,7 +230,7 @@ class LoggedInUserDAO:
             return DatabaseOutput.ERROR
 
 class MessageDao:
-    def add_message(self, token: str, message: str, email: str) -> bool:
+    def add_message(self, token: str, content: str, email: str) -> bool:
         try:
             user_dao = UserDAO()
 
@@ -248,7 +248,7 @@ class MessageDao:
                 [
                     recipient_user.email,
                     writer_user.email,
-                    message
+                    content
                 ]
             )
             get_db().commit()
@@ -269,7 +269,7 @@ class MessageDao:
                 return DatabaseOutput.NONE
 
             cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM Message WHERE email = ?", [logged_in_user.email])
+            cursor.execute("SELECT * FROM Message WHERE recipient = ?", [logged_in_user.email])
 
             cursor_output = cursor.fetchall()
 
@@ -292,7 +292,7 @@ class MessageDao:
     def get_user_messages_by_email(self, email: str):
         try:
             cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM Message WHERE email = ?", [email])
+            cursor.execute("SELECT * FROM Message WHERE recipient = ?", [email])
 
             cursor_output = cursor.fetchall()
 

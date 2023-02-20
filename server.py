@@ -256,7 +256,15 @@ def get_user_messages_by_email(email: str):
     if messages is db_helper.DatabaseOutput.ERROR:
         return "", 500
 
-    return json.dumps({"messages": messages}), 200
+    messages_output: list = []
+
+    for message in messages:
+        messages_output.append({
+            "writer": message[1],
+            "content": message[2]
+    })
+
+    return json.dumps({"messages": messages_output}), 200
 
 @app.route("/post-message", methods=["POST"])
 def post_message():
@@ -270,15 +278,15 @@ def post_message():
         return "", 401
 
     input_manager = db_helper.InputManager()
-    input_manager.verify_string_not_empty(received_json["message"])
+    input_manager.verify_string_not_empty(received_json["content"])
 
-    if ("message" not in received_json or "email" not in received_json or
-        not input_manager.verify_string_not_empty(received_json["message"]) or
+    if ("content" not in received_json or "recipient" not in received_json or
+        not input_manager.verify_string_not_empty(received_json["content"]) or
         len(received_json) != 2):
         return "", 400
 
     user_DAO = db_helper.UserDAO()
-    user = user_DAO.get_user_data_by_email(received_json["email"])
+    user = user_DAO.get_user_data_by_email(received_json["recipient"])
 
     if user is db_helper.DatabaseOutput.NONE:
         return "", 404
@@ -287,7 +295,7 @@ def post_message():
         return "", 500
 
     message_DAO = db_helper.MessageDao()
-    message_DAO.add_message(received_token, received_json["message"], received_json["email"])
+    message_DAO.add_message(received_token, received_json["content"], received_json["recipient"])
 
     return "", 201
 
