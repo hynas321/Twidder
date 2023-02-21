@@ -18,11 +18,11 @@ def teardown(exception):
 
 @socketio.on("connect")
 def connect():
-    print("ACTIVE WEBSOCKETS")
-    print(active_websockets)
     emit('acknowledge-connection', {"data": "Connection opened"})
+    print("Connection established")
+    print(active_websockets)
 
-@socketio.on("handle-user-connection")
+@socketio.on("handle-user-connected")
 def handle_user_connection(msg):
     try: 
         tokenValue = msg["data"]
@@ -30,14 +30,16 @@ def handle_user_connection(msg):
         if not tokenValue:
             emit("close-connection", {"data": "Connection authentication error"}, room=request.sid)
             return
+        
+        print("BEFORE")
+        print(active_websockets)
 
         logged_in_user_DAO = db_helper.LoggedInUserDAO()
         logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(tokenValue)
-        logged_in_users: list = logged_in_user_DAO.get_all_logged_in_users_by_email(logged_in_user.email)
+        logged_in_users: list
 
-        print("BEFORE")
-        print(logged_in_users)
-        print(active_websockets)
+        if logged_in_user != db_helper.DatabaseOutput.NONE:
+            logged_in_users = logged_in_user_DAO.get_all_logged_in_users_by_email(logged_in_user.email)
 
         if (not (logged_in_user is db_helper.DatabaseOutput.ERROR or logged_in_user is db_helper.DatabaseOutput.NONE)
             and len(logged_in_users) > 1):
@@ -55,13 +57,33 @@ def handle_user_connection(msg):
 
 
         active_websockets.append({"token": tokenValue, "sid": request.sid})
+        newest_websocket = active_websockets[len(active_websockets) - 1]
+
+        for active_socket in active_websockets:
+            if active_socket != newest_websocket and active_socket["token"] == newest_websocket["token"]:
+                active_websockets.remove(active_socket)
+
         print("AFTER")
-        print(logged_in_users)
         print(active_websockets)
 
     except Exception as ex:
         print(ex)
         emit("close-connection", {"data": "Connection error"})
+
+@socketio.on("handle-user-disconnected")
+def handle_user_disconnected(msg):
+    tokenValue = msg["data"]
+
+    print("BEFORE")
+    print(active_websockets)
+
+    for active_socket in active_websockets:
+        if active_socket["token"] == tokenValue:
+            active_websockets.remove(active_socket)
+
+    print("AFTER")
+    print(active_websockets)
+        
 
 @app.route("/sign-in", methods = ["POST"])
 def sign_in():
@@ -277,15 +299,7 @@ def get_user_messages_by_token():
     if messages is db_helper.DatabaseOutput.ERROR:
         return "", 500
 
-    messages_output: list = []
-
-    for message in messages:
-        messages_output.append({
-            "writer": message[1],
-            "content": message[2]
-        })
-
-    return json.dumps({"messages": messages_output}), 200
+    return json.dumps({"messages": messages}), 200
 
 @app.route("/get-user-messages-by-email/<email>", methods=["GET"])
 def get_user_messages_by_email(email: str):
@@ -306,15 +320,7 @@ def get_user_messages_by_email(email: str):
     if messages is db_helper.DatabaseOutput.ERROR:
         return "", 500
 
-    messages_output: list = []
-
-    for message in messages:
-        messages_output.append({
-            "writer": message[1],
-            "content": message[2]
-    })
-
-    return json.dumps({"messages": messages_output}), 200
+    return json.dumps({"messages": messages}), 200
 
 @app.route("/post-message", methods=["POST"])
 def post_message():
