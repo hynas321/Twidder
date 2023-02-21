@@ -78,13 +78,13 @@
                         <form id="change-password-form" onsubmit="changePassword(this); return false;">
                             <div><label for="oldPassword">Old password</label><br/><input id="oldPassword" type="password" required></div>
                             <div><label for="newPassword">New password</label><br/><input id="newPassword" type="password" required></div>
-                            <div><label for="repeatedNewPassword">New password</label><br/><input id="repeatedNewPassword" type="password" required></div>
+                            <div><label for="repeatedNewPassword">Repeated new password</label><br/><input id="repeatedNewPassword" type="password" required></div>
                             <input id="btn-change-password" type="submit" class="submit-button" value="Change">
                         </form>
                     </div>
                     <div class="center-text">
                         <h2>Sign out</h2>
-                        <button id="btn-sign-out" class="sign-out-button" onclick="signOut()" class="btn-tab">Sign out</button>
+                        <button id="btn-sign-out" class="sign-out-button" onclick="signOut('Signed out successfully', true)" class="btn-tab">Sign out</button>
                         <div id="account-tab-status-message" class="error-message">Status message</div>
                     </div>
                 </div>

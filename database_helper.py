@@ -263,18 +263,6 @@ class LoggedInUserDAO:
 
             return DatabaseOutput.ERROR
 
-    def delete_logged_in_users(self):
-        try:
-            get_db().execute("DELETE FROM LoggedInUser")
-            get_db().commit()
-
-            return True
-
-        except Exception as ex:
-            print(ex)
-
-            return False
-
 class MessageDao:
     def add_message(self, token: str, content: str, email: str) -> bool:
         try:
@@ -324,7 +312,7 @@ class MessageDao:
 
             result: list = []
             for output in cursor_output:
-                result.append(output)
+                result.append({"recipient": output[0], "writer": output[1], "content": output[2]})
 
             cursor.close()
 
@@ -347,7 +335,7 @@ class MessageDao:
 
             result: list = []
             for output in cursor_output:
-                result.append(output)
+                result.append({"recipient": output[0], "writer": output[1], "content": output[2]})
 
             cursor.close()
 

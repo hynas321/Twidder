@@ -1,6 +1,6 @@
 const minPasswordLength = 6;
-let socket;
-let userDataRetrieved = false;
+var socket;
+var userDataRetrieved = false;
 
 const displayProperty = {
     block: "block",
@@ -29,6 +29,12 @@ window.onload = function() {
         displayProfileView(tokenValue);
     }
 };
+
+window.onunload = function() {
+    const tokenValue = localStorage.getItem(localStorageKey.token);
+    
+    socket.emit("handle-user-disconnected", {"data": tokenValue});
+}
 
 //*** Views ***
 var displayWelcomeView = function() {
@@ -155,7 +161,7 @@ var signUp = function(signUpFormData) {
     if (!(passwordString == repeatedPasswordString)) {
         displayStatusMessage(
             statusMessageElement,
-            "Passwords are not the same",
+            "Password and the repeated password are not the same",
             false
         );
 
@@ -191,9 +197,18 @@ var signUp = function(signUpFormData) {
             if (signUpRequest.status == 201) {
                 displayStatusMessage(
                     statusMessageElement,
-                    "Account created successfully",
+                    `Account ${userDataObject.email} created successfully`,
                     true
                 )
+
+                document.getElementById("firstName").value = "";
+                document.getElementById("familyName").value = "";
+                document.getElementById("city").value = "";
+                document.getElementById("country").value = "";
+                document.getElementById("signUpEmail").value = "";
+                document.getElementById("signUpPassword").value = "";
+                document.getElementById("repeatedSignUpPassword").value = "";
+
             }
             else if (signUpRequest.status == 400) {
                 displayStatusMessage(
@@ -251,7 +266,7 @@ var changePassword = function(changePasswordFormData) {
     if (newPassword != repeatedNewPassword) {
         displayStatusMessage(
             accountTabStatusMessageElement,
-            "Passwords are not the same",
+            "New password and the repeated password are not the same",
             false
         );
 
@@ -328,10 +343,10 @@ var signOut = function(optionalMessage, optionalSuccess) {
     signOutRequest.onreadystatechange = function() {
         if (signOutRequest.readyState == 4) {
             userDataRetrieved = false;
+            socket.emit("handle-user-disconnected", {"data": tokenValue});
             clearLocalStorage();
             displayWelcomeView();
-            socket.disconnect();
-
+            
             if (optionalMessage != undefined && optionalSuccess != undefined) {
                 const statusMessageElement = document.getElementById("status-message");
 
@@ -351,6 +366,10 @@ var displayUserProfile = function() {
     const statusMessageElement = document.getElementById("status-message");
     const getUserDataRequest = new XMLHttpRequest();
 
+    if (userDataRetrieved) {
+        return;
+    }
+
     getUserDataRequest.open("GET", "/get-user-data-by-token", true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
@@ -366,7 +385,8 @@ var displayUserProfile = function() {
                 document.getElementById("gender-value").textContent = userData.data.gender;
                 document.getElementById("city-value").textContent = userData.data.city;
                 document.getElementById("country-value").textContent = userData.data.country;
-
+                
+                userDataRetrieved = true;
                 displayUserPostWall();
             }
             else {
@@ -657,6 +677,6 @@ manageSocket = function() {
     });
 
     socket.on('acknowledge-connection', function() {
-        socket.emit('handle-user-connection', {"data": tokenValue})
+        socket.emit('handle-user-connected', {"data": tokenValue})
     });
 }
