@@ -1,9 +1,12 @@
-from flask import Flask, request
+from flask import Flask, request, session
+from flask_socketio import SocketIO, disconnect, emit
 
 import database_helper as db_helper
 import json
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins='*')
+active_websockets: list = []
 
 @app.route("/", methods = ["GET"])
 def root():
@@ -12,6 +15,53 @@ def root():
 @app.teardown_request
 def teardown(exception):
     db_helper.disconnect()
+
+@socketio.on("connect")
+def connect():
+    print("ACTIVE WEBSOCKETS")
+    print(active_websockets)
+    emit('acknowledge-connection', {"data": "Connection opened"})
+
+@socketio.on("handle-user-connection")
+def handle_user_connection(msg):
+    try: 
+        tokenValue = msg["data"]
+
+        if not tokenValue:
+            emit("close-connection", {"data": "Connection authentication error"}, room=request.sid)
+            return
+
+        logged_in_user_DAO = db_helper.LoggedInUserDAO()
+        logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(tokenValue)
+        logged_in_users: list = logged_in_user_DAO.get_all_logged_in_users_by_email(logged_in_user.email)
+
+        print("BEFORE")
+        print(logged_in_users)
+        print(active_websockets)
+
+        if (not (logged_in_user is db_helper.DatabaseOutput.ERROR or logged_in_user is db_helper.DatabaseOutput.NONE)
+            and len(logged_in_users) > 1):
+
+            user_sid: str
+
+            for logged_user in logged_in_users:
+                for active_socket in active_websockets:
+                    if logged_user["token"] == active_socket["token"]:
+                        user_sid = active_socket["sid"]
+
+                        logged_in_user_DAO.delete_logged_in_user_by_token(logged_user["token"])
+                        active_websockets.remove(active_socket)
+                        emit("close-connection", {"data": "New user logged in to your account"}, room=user_sid)
+
+
+        active_websockets.append({"token": tokenValue, "sid": request.sid})
+        print("AFTER")
+        print(logged_in_users)
+        print(active_websockets)
+
+    except Exception as ex:
+        print(ex)
+        emit("close-connection", {"data": "Connection error"})
 
 @app.route("/sign-in", methods = ["POST"])
 def sign_in():
@@ -97,7 +147,7 @@ def sign_out():
         return "", 401
 
     logged_in_user_DAO = db_helper.LoggedInUserDAO()
-    is_logged_in_user_deleted: bool = logged_in_user_DAO.delete_logged_in_user(received_token)
+    is_logged_in_user_deleted: bool = logged_in_user_DAO.delete_logged_in_user_by_token(received_token)
 
     if not is_logged_in_user_deleted:
         return "", 500
@@ -300,6 +350,5 @@ def post_message():
     return "", 201
 
 if __name__ == "__main__":
-    app.debug = True
-    app.run()
+    socketio.run(app, debug=True, port=5000)
 

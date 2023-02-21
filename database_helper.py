@@ -170,9 +170,21 @@ class LoggedInUserDAO:
 
             return False
 
-    def delete_logged_in_user(self, token: str) -> bool:
+    def delete_logged_in_user_by_token(self, token: str) -> bool:
         try:
             get_db().execute("DELETE FROM LoggedInUser WHERE token = ?", [token])
+            get_db().commit()
+
+            return True
+
+        except Exception as ex:
+            print(ex)
+
+            return False
+
+    def delete_logged_in_user_by_email(self, email: str) -> bool:
+        try:
+            get_db().execute("DELETE FROM LoggedInUser WHERE email = ?", [email])
             get_db().commit()
 
             return True
@@ -228,6 +240,40 @@ class LoggedInUserDAO:
             print(ex)
 
             return DatabaseOutput.ERROR
+
+    def get_all_logged_in_users_by_email(self, email: str):
+        try:
+            cursor = get_db().cursor()
+            cursor.execute("SELECT * FROM LoggedInUser WHERE email = ?", [email])
+            cursor_output = cursor.fetchall()
+
+            if len(cursor_output) == 0:
+                return DatabaseOutput.NONE
+
+            result: list = []
+            for output in cursor_output:
+                result.append({"token": output[0], "email": output[1]})
+
+            cursor.close()
+
+            return result
+
+        except Exception as ex:
+            print(ex)
+
+            return DatabaseOutput.ERROR
+
+    def delete_logged_in_users(self):
+        try:
+            get_db().execute("DELETE FROM LoggedInUser")
+            get_db().commit()
+
+            return True
+
+        except Exception as ex:
+            print(ex)
+
+            return False
 
 class MessageDao:
     def add_message(self, token: str, content: str, email: str) -> bool:

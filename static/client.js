@@ -1,4 +1,5 @@
 const minPasswordLength = 6;
+let socket;
 let userDataRetrieved = false;
 
 const displayProperty = {
@@ -17,7 +18,6 @@ const tabs = {
     browse: "browse-tab"
 };
 
-
 window.onload = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
 
@@ -25,6 +25,7 @@ window.onload = function() {
         displayWelcomeView();
     }
     else {
+        manageSocket();
         displayProfileView(tokenValue);
     }
 };
@@ -103,6 +104,8 @@ var signIn = function(signInFormData) {
 
                 localStorage.setItem(localStorageKey.token, jsonResponse.token);
                 loggedInUserEmail = credentials.email;
+
+                manageSocket();
                 displayProfileView();
             }
             else if (signInRequest.status == 400) {
@@ -314,7 +317,7 @@ var changePassword = function(changePasswordFormData) {
     }
 }
 
-var signOut = function() {
+var signOut = function(optionalMessage, optionalSuccess) {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const signOutRequest = new XMLHttpRequest();
 
@@ -324,15 +327,19 @@ var signOut = function() {
     signOutRequest.send(JSON.stringify({request: "sign-out"}));
     signOutRequest.onreadystatechange = function() {
         if (signOutRequest.readyState == 4) {
-            if (signOutRequest.status == 200) {
-                userDataRetrieved = false;
-                clearLocalStorage();
-                displayWelcomeView();
-            }
-            else {
-                userDataRetrieved = false;
-                clearLocalStorage();
-                displayWelcomeView();
+            userDataRetrieved = false;
+            clearLocalStorage();
+            displayWelcomeView();
+            socket.disconnect();
+
+            if (optionalMessage != undefined && optionalSuccess != undefined) {
+                const statusMessageElement = document.getElementById("status-message");
+
+                displayStatusMessage(
+                    statusMessageElement,
+                    optionalMessage,
+                    optionalSuccess
+                );
             }
         }
     }
@@ -637,4 +644,19 @@ setLocalStorageValue = function(key, stringValue) {
 clearLocalStorage = function() {
     localStorage.removeItem(localStorageKey.token);
     localStorage.removeItem(localStorageKey.lastOpenedTab);
+}
+
+//*** Web socket ***
+manageSocket = function() {
+    const tokenValue = localStorage.getItem(localStorageKey.token);
+
+    socket = io.connect('http://localhost:5000');
+
+    socket.on('close-connection', function(msg) {
+        signOut(msg.data, false);
+    });
+
+    socket.on('acknowledge-connection', function() {
+        socket.emit('handle-user-connection', {"data": tokenValue})
+    });
 }
