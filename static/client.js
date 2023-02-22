@@ -449,7 +449,7 @@ var displayUserProfile = function() {
     
 var displaySearchedUserProfile = function(browseFormDataObject) {
     const embeddedTab = document.getElementById("embedded-tab");
-    const browseTabStatusMessageElement = document.getElementById("browse-tab-status-message");
+    const bottomBrowseTabStatusMessageElement = document.getElementById("browse-tab-bottom-status-message");
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const email = browseFormDataObject.searchedEmail.value;
     const getUserDataRequest = new XMLHttpRequest();
@@ -463,8 +463,8 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
             if (getUserDataRequest.status == 200) {
                 const userData = JSON.parse(getUserDataRequest.response);
 
-                if (browseTabStatusMessageElement.style.display == displayProperty.block) {
-                    browseTabStatusMessageElement.style.display = displayProperty.none;
+                if (bottomBrowseTabStatusMessageElement.style.display == displayProperty.block) {
+                    bottomBrowseTabStatusMessageElement.style.display = displayProperty.none;
                 } 
                 
                 document.getElementById("searched-email-value").textContent = userData.data.email;
@@ -484,21 +484,21 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
 
             if (getUserDataRequest.status == 401) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    bottomBrowseTabStatusMessageElement,
                     "Authentication error, could not load user data",
                     false
                 );
             }
             else if (getUserDataRequest.status == 404) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    bottomBrowseTabStatusMessageElement,
                     "User not found",
                     false
                 );
             }
             else if (getUserDataRequest.status == 500) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    bottomBrowseTabStatusMessageElement,
                     "Unexpected error, could not load user data",
                     false
                 );
