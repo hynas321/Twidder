@@ -30,11 +30,10 @@ window.onload = function() {
     }
 };
 
-window.onunload = function() {
+window.addEventListener("beforeunload", function (e) {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    
     socket.emit("handle-user-disconnected", {"data": tokenValue});
-}
+});
 
 //*** Views ***
 var displayWelcomeView = function() {
@@ -66,6 +65,11 @@ var displayProfileView = function() {
 }
 
 var displayStatusMessage = function(statusMessageElement, statusMessage, success) {
+
+    if (statusMessageElement.style.display == displayProperty.block) {
+        statusMessageElement.style.display = displayProperty.none;
+    } 
+
     if (success) {
         statusMessageElement.classList.replace("error-message", "success-message");
     }
@@ -208,7 +212,6 @@ var signUp = function(signUpFormData) {
                 document.getElementById("signUpEmail").value = "";
                 document.getElementById("signUpPassword").value = "";
                 document.getElementById("repeatedSignUpPassword").value = "";
-
             }
             else if (signUpRequest.status == 400) {
                 displayStatusMessage(
@@ -335,25 +338,46 @@ var changePassword = function(changePasswordFormData) {
 var signOut = function(optionalMessage, optionalSuccess) {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const signOutRequest = new XMLHttpRequest();
+    console.log(tokenValue);
 
     signOutRequest.open("DELETE", "/sign-out", true);
     signOutRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     signOutRequest.setRequestHeader("token", tokenValue);
-    signOutRequest.send(JSON.stringify({request: "sign-out"}));
+    signOutRequest.send();
     signOutRequest.onreadystatechange = function() {
         if (signOutRequest.readyState == 4) {
             userDataRetrieved = false;
             socket.emit("handle-user-disconnected", {"data": tokenValue});
             clearLocalStorage();
             displayWelcomeView();
-            
-            if (optionalMessage != undefined && optionalSuccess != undefined) {
+
+            if (signOutRequest.status == 200) {
+                if (optionalMessage != undefined && optionalSuccess != undefined) {
+                    const statusMessageElement = document.getElementById("status-message");
+
+                    displayStatusMessage(
+                        statusMessageElement,
+                        optionalMessage,
+                        optionalSuccess
+                    );
+                }
+            }
+            else if (signOutRequest.status == 401) {
                 const statusMessageElement = document.getElementById("status-message");
 
                 displayStatusMessage(
                     statusMessageElement,
-                    optionalMessage,
-                    optionalSuccess
+                    "Other user signed in to your account",
+                    false
+                );
+            }
+            else if (signOutRequest.status == 500) {
+                const statusMessageElement = document.getElementById("status-message");
+
+                displayStatusMessage(
+                    statusMessageElement,
+                    "Signed out with unexpected error",
+                    false
                 );
             }
         }
@@ -363,7 +387,7 @@ var signOut = function(optionalMessage, optionalSuccess) {
 //*** User Profile ***
 var displayUserProfile = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    const statusMessageElement = document.getElementById("status-message");
+    const homeTabStatusMessageElement = document.getElementById("home-tab-status-message");
     const getUserDataRequest = new XMLHttpRequest();
 
     if (userDataRetrieved) {
@@ -388,15 +412,36 @@ var displayUserProfile = function() {
                 
                 userDataRetrieved = true;
                 displayUserPostWall();
+                return;
             }
-            else {
-                signOut();
 
+            document.getElementById("email-value").textContent = "-";
+            document.getElementById("firstname-value").textContent = "-";
+            document.getElementById("familyname-value").textContent = "-";
+            document.getElementById("gender-value").textContent = "-";
+            document.getElementById("city-value").textContent = "-";
+            document.getElementById("country-value").textContent = "-";
+
+            if (getUserDataRequest.status == 401){
                 displayStatusMessage(
-                    statusMessageElement,
-                    "User data error",
+                    homeTabStatusMessageElement,
+                    "Authentication error - could not load user data",
                     false
-                )
+                );
+            }
+            else if (getUserDataRequest.status = 404) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "User data not found",
+                    false
+                );
+            }
+            else if (getUserDataRequest.status == 500) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "Unexpected error when loading user data",
+                    false
+                );
             }
         }
     }
@@ -432,17 +477,29 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
                 embeddedTab.style.display = displayProperty.block;
                 
                 displaySearchedUserPostWall();
+                return;
             }
-            else {
-                if (browseTabStatusMessageElement.style.display == displayProperty.block) {
-                    browseTabStatusMessageElement.style.display = displayProperty.none;
-                } 
 
-                embeddedTab.style.display = displayProperty.none;
+            embeddedTab.style.display = displayProperty.none;
 
+            if (getUserDataRequest.status == 401) {
                 displayStatusMessage(
                     browseTabStatusMessageElement,
-                    "User does not exist",
+                    "Authentication error, could not load user data",
+                    false
+                );
+            }
+            else if (getUserDataRequest.status == 404) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "User not found",
+                    false
+                );
+            }
+            else if (getUserDataRequest.status == 500) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "Unexpected error, could not load user data",
                     false
                 );
             }
@@ -453,9 +510,10 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
 //*** Post Wall ***
 async function postMessageToUserWall() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
+    const homeTabStatusMessageElement = document.getElementById("home-tab-status-message");
     const textArea = document.getElementById("text-area");
-  
-    const getUserDataRequest = new XMLHttpRequest();
+
+    const getUserDataRequest = new XMLHttpRequest();    
     getUserDataRequest.open("GET", "/get-user-data-by-token", true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
@@ -468,13 +526,20 @@ async function postMessageToUserWall() {
                     resolve(userData);
                 } 
                 else {
-                    reject('User data error');
+                    displayStatusMessage(
+                        homeTabStatusMessageElement,
+                        "Account data error",
+                        false
+                    );
+    
+                    reject(undefined);
                 }
             }
         }
     });
   
-    getUserDataRequest.send(JSON.stringify({request: "get-user-data-by-token"}));
+    getUserDataRequest.send();
+
     const userData = await getUserDataPromise;
 
     const postMessageBody = {
@@ -489,9 +554,52 @@ async function postMessageToUserWall() {
     postMessageRequest.send(JSON.stringify(postMessageBody));
     postMessageRequest.onreadystatechange = function() {
         if (postMessageRequest.readyState == 4) {
+
             if (postMessageRequest.status == 201) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "Message posted successfully",
+                    true
+                );
+
+                setTimeout(()=> {
+                    homeTabStatusMessageElement.style.display = displayProperty.none;
+                }, 3000)
+
                 textArea.value = "";
                 displayUserPostWall();
+            }
+            else if (postMessageRequest.status == 401) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "Authentication error - message not sent",
+                    false
+                );
+            }
+            else if (postMessageRequest.status == 400) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "Message cannot be empty",
+                    false
+                );
+
+                setTimeout(()=> {
+                    homeTabStatusMessageElement.style.display = displayProperty.none;
+                }, 3000)
+            }
+            else if (postMessageRequest.status == 404) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "User not found - message not sent",
+                    false
+                );
+            }
+            else if (postMessageRequest.status == 500) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "Unexpected error - message not sent",
+                    false
+                );
             }
         }
     }
@@ -500,6 +608,7 @@ async function postMessageToUserWall() {
 var postMessageToSearchedUserWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const textArea = document.getElementById("searched-text-area");
+    const browseTabStatusMessageElement = document.getElementById("browse-tab-status-message");
     const email = document.getElementById("searchedEmail").value;
 
     const postMessageBody = {
@@ -514,9 +623,52 @@ var postMessageToSearchedUserWall = function() {
     postMessageRequest.send(JSON.stringify(postMessageBody));
     postMessageRequest.onreadystatechange = function() {
         if (postMessageRequest.readyState == 4) {
+
             if (postMessageRequest.status == 201) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "Message posted successfully",
+                    true
+                );
+
+                setTimeout(()=> {
+                    browseTabStatusMessageElement.style.display = displayProperty.none;
+                }, 3000)
+
                 textArea.value = "";
                 displaySearchedUserPostWall();
+            }
+            else if (postMessageRequest.status == 401) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "Authentication error - message not sent",
+                    false
+                );
+            }
+            else if (postMessageRequest.status == 400) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "Message cannot be empty",
+                    false
+                );
+
+                setTimeout(()=> {
+                    browseTabStatusMessageElement.style.display = displayProperty.none;
+                }, 3000)
+            }
+            else if (postMessageRequest.status == 404) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "User not found - message not sent",
+                    false
+                );
+            }
+            else if (postMessageRequest.status == 500) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "Unexpected error - message not sent",
+                    false
+                );
             }
         }
     }
@@ -525,6 +677,7 @@ var postMessageToSearchedUserWall = function() {
 
 var displayUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
+    const homeTabStatusMessageElement = document.getElementById("home-tab-status-message");
 
     const getUserMessagesRequest = new XMLHttpRequest();
     getUserMessagesRequest.open("GET", "/get-user-messages-by-token", true);
@@ -544,6 +697,27 @@ var displayUserPostWall = function() {
                         `<br><b><div style="color:red">${response.messages[i].writer}</b></div> ${response.messages[i].content}<br>`;
                 }
             }
+            else if (getUserMessagesRequest.status == 401) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "Authentication error - messages could not be displayed",
+                    false
+                );
+            }
+            else if (getUserMessagesRequest.status == 404) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "No messages to display",
+                    true
+                );
+            }
+            else if (getUserMessagesRequest.status == 500) {
+                displayStatusMessage(
+                    homeTabStatusMessageElement,
+                    "Unexpected error - messages could not be displayed",
+                    true
+                );
+            }
         }
     }
 }
@@ -551,6 +725,7 @@ var displayUserPostWall = function() {
 var displaySearchedUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const email = document.getElementById("searchedEmail").value;
+    const browseTabStatusMessageElement = document.getElementById("browse-tab-status-message");
     const getUserMessagesRequest = new XMLHttpRequest();
 
     getUserMessagesRequest.open("GET", "/get-user-messages-by-email/" + email, true);
@@ -569,6 +744,27 @@ var displaySearchedUserPostWall = function() {
                     postWall.innerHTML +=
                         `<br><b><div style="color:red">${response.messages[i].writer}</b></div> ${response.messages[i].content}<br>`;
                 }
+            }
+            else if (getUserMessagesRequest.status == 401) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "Authentication error - messages could not be displayed",
+                    false
+                );
+            }
+            else if (getUserMessagesRequest.status == 404) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "No messages to display",
+                    true
+                );
+            }
+            else if (getUserMessagesRequest.status == 500) {
+                displayStatusMessage(
+                    browseTabStatusMessageElement,
+                    "Unexpected error - messages could not be displayed",
+                    true
+                );
             }
         }
     }

@@ -1,4 +1,4 @@
-from flask import Flask, request, session
+from flask import Flask, request
 from flask_socketio import SocketIO, disconnect, emit
 
 import database_helper as db_helper
@@ -19,8 +19,6 @@ def teardown(exception):
 @socketio.on("connect")
 def connect():
     emit('acknowledge-connection', {"data": "Connection opened"})
-    print("Connection established")
-    print(active_websockets)
 
 @socketio.on("handle-user-connected")
 def handle_user_connection(msg):
@@ -29,10 +27,8 @@ def handle_user_connection(msg):
 
         if not tokenValue:
             emit("close-connection", {"data": "Connection authentication error"}, room=request.sid)
+            disconnect()
             return
-        
-        print("BEFORE")
-        print(active_websockets)
 
         logged_in_user_DAO = db_helper.LoggedInUserDAO()
         logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(tokenValue)
@@ -55,16 +51,12 @@ def handle_user_connection(msg):
                         active_websockets.remove(active_socket)
                         emit("close-connection", {"data": "New user logged in to your account"}, room=user_sid)
 
-
         active_websockets.append({"token": tokenValue, "sid": request.sid})
         newest_websocket = active_websockets[len(active_websockets) - 1]
 
         for active_socket in active_websockets:
             if active_socket != newest_websocket and active_socket["token"] == newest_websocket["token"]:
                 active_websockets.remove(active_socket)
-
-        print("AFTER")
-        print(active_websockets)
 
     except Exception as ex:
         print(ex)
@@ -74,16 +66,9 @@ def handle_user_connection(msg):
 def handle_user_disconnected(msg):
     tokenValue = msg["data"]
 
-    print("BEFORE")
-    print(active_websockets)
-
     for active_socket in active_websockets:
         if active_socket["token"] == tokenValue:
             active_websockets.remove(active_socket)
-
-    print("AFTER")
-    print(active_websockets)
-        
 
 @app.route("/sign-in", methods = ["POST"])
 def sign_in():
@@ -357,4 +342,3 @@ def post_message():
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, port=5000)
-
