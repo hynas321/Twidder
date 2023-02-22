@@ -338,7 +338,6 @@ var changePassword = function(changePasswordFormData) {
 var signOut = function(optionalMessage, optionalSuccess) {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const signOutRequest = new XMLHttpRequest();
-    console.log(tokenValue);
 
     signOutRequest.open("DELETE", "/sign-out", true);
     signOutRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -397,7 +396,7 @@ var displayUserProfile = function() {
     getUserDataRequest.open("GET", "/get-user-data-by-token", true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
-    getUserDataRequest.send(JSON.stringify({request: "get-user-data-by-token"}));
+    getUserDataRequest.send();
     getUserDataRequest.onreadystatechange = function() {
         if (getUserDataRequest.readyState == 4) {
             if (getUserDataRequest.status == 200) {
@@ -457,7 +456,7 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
     getUserDataRequest.open("GET", "/get-user-data-by-email/" + email, true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
-    getUserDataRequest.send(JSON.stringify({request: "get-user-data-by-email"}));
+    getUserDataRequest.send();
     getUserDataRequest.onreadystatechange = function() {
         if (getUserDataRequest.readyState == 4) {
             if (getUserDataRequest.status == 200) {
@@ -726,6 +725,7 @@ var displaySearchedUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const email = document.getElementById("searchedEmail").value;
     const browseTabStatusMessageElement = document.getElementById("browse-tab-status-message");
+    const postWall = document.getElementById("searched-post-wall");
     const getUserMessagesRequest = new XMLHttpRequest();
 
     getUserMessagesRequest.open("GET", "/get-user-messages-by-email/" + email, true);
@@ -736,7 +736,6 @@ var displaySearchedUserPostWall = function() {
         if (getUserMessagesRequest.readyState == 4) {
             if (getUserMessagesRequest.status == 200) {
                 const response = JSON.parse(getUserMessagesRequest.response);
-                const postWall = document.getElementById("searched-post-wall");
 
                 postWall.innerHTML = "";
 
@@ -744,8 +743,12 @@ var displaySearchedUserPostWall = function() {
                     postWall.innerHTML +=
                         `<br><b><div style="color:red">${response.messages[i].writer}</b></div> ${response.messages[i].content}<br>`;
                 }
+                return;
             }
-            else if (getUserMessagesRequest.status == 401) {
+
+            postWall.innerHTML = "";
+
+            if (getUserMessagesRequest.status == 401) {
                 displayStatusMessage(
                     browseTabStatusMessageElement,
                     "Authentication error - messages could not be displayed",
