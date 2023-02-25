@@ -88,6 +88,11 @@ body{
     float: right;
 }
 
+.form-input-button-left {
+    width: 45%;
+    float: left;
+}
+
 .tab-button {
     height: 30px;
     width: 80px;

@@ -64,6 +64,13 @@ var displayProfileView = function() {
     }
 }
 
+var displayRecoverPasswordView = function() {
+    const body = document.getElementById("body");
+    const recoverPasswordView = document.getElementById("recoverpasswordview");
+
+    body.innerHTML = recoverPasswordView.innerHTML;
+}
+
 var displayStatusMessage = function(statusMessageElement, statusMessage, success) {
 
     if (statusMessageElement.style.display == displayProperty.block) {
@@ -855,18 +862,18 @@ var setActiveButton = function(tabName) {
 }
 
 //*** Local storage ***
-setLocalStorageValue = function(key, stringValue) {
+var setLocalStorageValue = function(key, stringValue) {
     localStorage.removeItem(key);
     localStorage.setItem(key, stringValue);
 }
 
-clearLocalStorage = function() {
+var clearLocalStorage = function() {
     localStorage.removeItem(localStorageKey.token);
     localStorage.removeItem(localStorageKey.lastOpenedTab);
 }
 
 //*** Web socket ***
-manageSocket = function() {
+var manageSocket = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
 
     socket = io.connect('http://localhost:5000');
@@ -878,4 +885,46 @@ manageSocket = function() {
     socket.on('acknowledge-connection', function() {
         socket.emit('handle-user-connected', {"data": tokenValue})
     });
+}
+
+var recoverPassword = function() {
+    const recoverEmail = document.getElementById("recover-email")
+    const recoverPasswordStatusMessage = document.getElementById("recover-password-status-message")
+
+    displayStatusMessage(
+        recoverPasswordStatusMessage,
+        "Processing the request...",
+        true
+    );
+
+    const recoverPasswordRequest = new XMLHttpRequest()
+    recoverPasswordRequest.open("GET", "/recover-password-via-email/" + recoverEmail.value, true);
+    recoverPasswordRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    recoverPasswordRequest.send();
+    recoverPasswordRequest.onreadystatechange = function() {
+        if (recoverPasswordRequest.readyState == 4) {
+            if (recoverPasswordRequest.status == 200) {
+                displayStatusMessage(
+                    recoverPasswordStatusMessage,
+                    "Password successfully delivered to e-mail " + recoverEmail.value,
+                    true
+                );
+                recoverEmail.value = ""
+            }
+            else if (recoverPasswordRequest.status == 404) {
+                displayStatusMessage(
+                    recoverPasswordStatusMessage,
+                    "User not found",
+                    false
+                );
+            }
+            else if (recoverPasswordRequest.status == 500) {
+                displayStatusMessage(
+                    recoverPasswordStatusMessage,
+                    "Unexpected error, try again",
+                    false
+                );
+            }
+        }
+    }
 }

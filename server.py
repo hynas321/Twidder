@@ -1,8 +1,11 @@
 from flask import Flask, request
 from flask_socketio import SocketIO, disconnect, emit
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 import database_helper as db_helper
 import json
+import smtplib
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -339,6 +342,62 @@ def post_message():
     message_DAO.add_message(received_token, received_json["content"], received_json["recipient"])
 
     return "", 201
+
+@app.route("/recover-password-via-email/<email>", methods=["GET"])
+def recover_password_via_email(email: str):
+ 
+    user_DAO = db_helper.UserDAO()
+    user = user_DAO.get_user_data_by_email(email)
+
+    if user is db_helper.DatabaseOutput.NONE:
+        return "", 404
+    
+    if user is db_helper.DatabaseOutput.ERROR:
+        return "", 500
+    
+    token_manager = db_helper.TokenManager()
+    generated_password = token_manager.generate_token()[0:16]
+    
+    try:
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
+        smtp_username = "twidder09@gmail.com"
+        smtp_password = "rytvzxgrmyzhgygz"
+
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+
+        from_address = smtp_username
+        to_address = email
+        subject = "Twidder - password recovery"
+        body = f"""
+        <h2>Your newly generated password: {generated_password}</h2>
+        <h3>You are free to change it in the account tab after signing in to your account :)</h3>
+        <h3>
+            Best regards,<br>
+            Twidder support
+        </h3>
+        """
+
+        message = MIMEMultipart()
+        message['From'] = from_address
+        message['To'] = to_address
+        message['Subject'] = subject
+        message.attach(MIMEText(body, "html"))
+
+        is_password_changed = user_DAO.change_user_password(user.email, generated_password)
+
+        if not is_password_changed:
+            return "", 500
+
+        server.sendmail(from_address, to_address, message.as_string())
+
+        server.quit()
+    except:
+        return "", 500
+
+    return "", 200
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, port=5000)
