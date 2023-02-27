@@ -106,7 +106,6 @@ var signIn = function(signInFormData) {
 
     signInRequest.open("POST", "/sign-in", true)
     signInRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    signInRequest.send(JSON.stringify(credentials))
     signInRequest.onreadystatechange = function() {
         if (signInRequest.readyState == 4) {
             if (signInRequest.status == 201) {
@@ -155,6 +154,7 @@ var signIn = function(signInFormData) {
             }
         }
     }
+    signInRequest.send(JSON.stringify(credentials))
 }
 
 var signUp = function(signUpFormData) {
@@ -195,7 +195,6 @@ var signUp = function(signUpFormData) {
 
     signUpRequest.open("POST", "/sign-up", true);
     signUpRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    signUpRequest.send(JSON.stringify(userDataObject));
     signUpRequest.onreadystatechange = function() {
         if (signUpRequest.readyState == 4) {
             if (signUpRequest.status == 201) {
@@ -236,6 +235,7 @@ var signUp = function(signUpFormData) {
             }
         }
     }
+    signUpRequest.send(JSON.stringify(userDataObject));
 }
 
 var isPasswordLengthCorrect = function(passwordString) {
@@ -286,7 +286,6 @@ var changePassword = function(changePasswordFormData) {
     changePasswordRequest.open("PUT", "/change-password", true);
     changePasswordRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     changePasswordRequest.setRequestHeader("token", tokenValue);
-    changePasswordRequest.send(JSON.stringify(passwords))
     changePasswordRequest.onreadystatechange = function() {
         if (changePasswordRequest.readyState == 4) {
             if (changePasswordRequest.status == 200) {
@@ -333,6 +332,7 @@ var changePassword = function(changePasswordFormData) {
             }
         }
     }
+    changePasswordRequest.send(JSON.stringify(passwords));
 }
 
 var signOut = function(optionalMessage, optionalSuccess) {
@@ -342,7 +342,6 @@ var signOut = function(optionalMessage, optionalSuccess) {
     signOutRequest.open("DELETE", "/sign-out", true);
     signOutRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     signOutRequest.setRequestHeader("token", tokenValue);
-    signOutRequest.send();
     signOutRequest.onreadystatechange = function() {
         if (signOutRequest.readyState == 4) {
             userDataRetrieved = false;
@@ -381,6 +380,7 @@ var signOut = function(optionalMessage, optionalSuccess) {
             }
         }
     }
+    signOutRequest.send();
 }
 
 //*** User Profile ***
@@ -396,7 +396,6 @@ var displayUserProfile = function() {
     getUserDataRequest.open("GET", "/get-user-data-by-token", true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
-    getUserDataRequest.send();
     getUserDataRequest.onreadystatechange = function() {
         if (getUserDataRequest.readyState == 4) {
             if (getUserDataRequest.status == 200) {
@@ -444,6 +443,7 @@ var displayUserProfile = function() {
             }
         }
     }
+    getUserDataRequest.send();
 }
     
 var displaySearchedUserProfile = function(browseFormDataObject) {
@@ -456,7 +456,6 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
     getUserDataRequest.open("GET", "/get-user-data-by-email/" + email, true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
-    getUserDataRequest.send();
     getUserDataRequest.onreadystatechange = function() {
         if (getUserDataRequest.readyState == 4) {
             if (getUserDataRequest.status == 200) {
@@ -504,6 +503,7 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
             }
         }
     }
+    getUserDataRequest.send();
 }
 
 //*** Post Wall ***
@@ -536,7 +536,6 @@ async function postMessageToUserWall() {
             }
         }
     });
-  
     getUserDataRequest.send();
 
     const userData = await getUserDataPromise;
@@ -550,7 +549,6 @@ async function postMessageToUserWall() {
     postMessageRequest.open("POST", "/post-message", true);
     postMessageRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     postMessageRequest.setRequestHeader("token", tokenValue);
-    postMessageRequest.send(JSON.stringify(postMessageBody));
     postMessageRequest.onreadystatechange = function() {
         if (postMessageRequest.readyState == 4) {
 
@@ -602,7 +600,8 @@ async function postMessageToUserWall() {
             }
         }
     }
-  }
+    postMessageRequest.send(JSON.stringify(postMessageBody));
+}
 
 var postMessageToSearchedUserWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
@@ -619,7 +618,6 @@ var postMessageToSearchedUserWall = function() {
     postMessageRequest.open("POST", "/post-message", true);
     postMessageRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     postMessageRequest.setRequestHeader("token", tokenValue);
-    postMessageRequest.send(JSON.stringify(postMessageBody));
     postMessageRequest.onreadystatechange = function() {
         if (postMessageRequest.readyState == 4) {
 
@@ -671,7 +669,7 @@ var postMessageToSearchedUserWall = function() {
             }
         }
     }
-
+    postMessageRequest.send(JSON.stringify(postMessageBody));
 }
 
 var displayUserPostWall = function() {
@@ -682,7 +680,6 @@ var displayUserPostWall = function() {
     getUserMessagesRequest.open("GET", "/get-user-messages-by-token", true);
     getUserMessagesRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserMessagesRequest.setRequestHeader("token", tokenValue);
-    getUserMessagesRequest.send();
     getUserMessagesRequest.onreadystatechange = function() {
         if (getUserMessagesRequest.readyState == 4) {
             if (getUserMessagesRequest.status == 200) {
@@ -719,6 +716,7 @@ var displayUserPostWall = function() {
             }
         }
     }
+    getUserMessagesRequest.send();
 }
 
 var displaySearchedUserPostWall = function() {
@@ -731,7 +729,6 @@ var displaySearchedUserPostWall = function() {
     getUserMessagesRequest.open("GET", "/get-user-messages-by-email/" + email, true);
     getUserMessagesRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserMessagesRequest.setRequestHeader("token", tokenValue);
-    getUserMessagesRequest.send();
     getUserMessagesRequest.onreadystatechange = function() {
         if (getUserMessagesRequest.readyState == 4) {
             if (getUserMessagesRequest.status == 200) {
@@ -771,6 +768,7 @@ var displaySearchedUserPostWall = function() {
             }
         }
     }
+    getUserMessagesRequest.send();
 }
 
 //*** Tabs ***
