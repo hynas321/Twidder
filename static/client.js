@@ -31,8 +31,10 @@ window.onload = function() {
 };
 
 window.addEventListener("beforeunload", function (e) {
-    const tokenValue = localStorage.getItem(localStorageKey.token);
-    socket.emit("handle-user-disconnected", {"data": tokenValue});
+    if (socket != undefined) {
+        const tokenValue = localStorage.getItem(localStorageKey.token);
+        socket.emit("handle-user-disconnected", {"data": tokenValue});
+    }
 });
 
 //*** Views ***
