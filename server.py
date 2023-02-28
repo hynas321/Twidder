@@ -2,6 +2,8 @@ from flask import Flask, request
 from flask_socketio import SocketIO, disconnect, emit
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import requests
+from requests.structures import CaseInsensitiveDict
 
 import database_helper as db_helper
 import json
@@ -325,8 +327,8 @@ def post_message():
     input_manager.verify_string_not_empty(received_json["content"])
 
     if ("content" not in received_json or "recipient" not in received_json or
-        not input_manager.verify_string_not_empty(received_json["content"]) or
-        len(received_json) != 2):
+        "writer_location" not in received_json or len(received_json) != 3 or
+        not input_manager.verify_string_not_empty(received_json["content"])):
         return "", 400
 
     user_DAO = db_helper.UserDAO()
@@ -339,13 +341,12 @@ def post_message():
         return "", 500
 
     message_DAO = db_helper.MessageDao()
-    message_DAO.add_message(received_token, received_json["content"], received_json["recipient"])
+    message_DAO.add_message(received_token, received_json["content"], received_json["recipient"], received_json["writer_location"])
 
     return "", 201
 
 @app.route("/recover-password-via-email/<email>", methods=["GET"])
 def recover_password_via_email(email: str):
- 
     user_DAO = db_helper.UserDAO()
     user = user_DAO.get_user_data_by_email(email)
 
@@ -398,6 +399,34 @@ def recover_password_via_email(email: str):
         return "", 500
 
     return "", 200
+
+@app.route("/get-location-name/<latitude>/<longitude>", methods=["GET"])
+def get_location_name(latitude: str, longitude: str):
+    print("REQUEST")
+    received_token = request.headers.get("token")
+
+    token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
+
+    if received_token is None or not is_token_correct:
+        return "", 401
+    
+    myAPIKey = "bf7fa01b2f0549bda7a3d044e2082845"
+    reverseGeocodingUrl = f"https://api.geoapify.com/v1/geocode/reverse?lat={latitude}&lon={longitude}&apiKey={myAPIKey}"
+
+    headers = CaseInsensitiveDict()
+    headers["Accept"] = "application/json;charset=UTF-8"
+
+    resp = requests.get(reverseGeocodingUrl, headers=headers)
+    
+    if resp.status_code != 200:
+        return 500
+    
+    country_output = resp.json()["features"][0]["properties"]["country"]
+    city_output = resp.json()["features"][0]["properties"]["city"]
+
+    return  {"country": country_output, "city": city_output}, 200
+
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, port=5000)

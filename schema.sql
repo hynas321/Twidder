@@ -16,5 +16,6 @@ CREATE TABLE IF NOT EXISTS LoggedInUser(
 CREATE TABLE IF NOT EXISTS Message(
     recipient VARCHAR(60),
     writer VARCHAR(60),
-    content VARCHAR(240)
+    content VARCHAR(240),
+    writer_location VARCHAR(60)
 )

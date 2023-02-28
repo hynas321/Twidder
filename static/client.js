@@ -1,5 +1,6 @@
 const minPasswordLength = 6;
 var socket;
+var userLocation;
 var userDataRetrieved = false;
 
 const displayProperty = {
@@ -31,8 +32,10 @@ window.onload = function() {
 };
 
 window.addEventListener("beforeunload", function (e) {
-    const tokenValue = localStorage.getItem(localStorageKey.token);
-    socket.emit("handle-user-disconnected", {"data": tokenValue});
+    if (socket != undefined) {
+        const tokenValue = localStorage.getItem(localStorageKey.token);
+        socket.emit("handle-user-disconnected", {"data": tokenValue});
+    }
 });
 
 //*** Views ***
@@ -415,18 +418,12 @@ var displayUserProfile = function() {
                 document.getElementById("gender-value").textContent = userData.data.gender;
                 document.getElementById("city-value").textContent = userData.data.city;
                 document.getElementById("country-value").textContent = userData.data.country;
+                getCurrentUserLocation();
                 
                 userDataRetrieved = true;
                 displayUserPostWall();
                 return;
             }
-
-            document.getElementById("email-value").textContent = "-";
-            document.getElementById("firstname-value").textContent = "-";
-            document.getElementById("familyname-value").textContent = "-";
-            document.getElementById("gender-value").textContent = "-";
-            document.getElementById("city-value").textContent = "-";
-            document.getElementById("country-value").textContent = "-";
 
             if (getUserDataRequest.status == 401){
                 displayStatusMessage(
@@ -550,8 +547,9 @@ async function postMessageToUserWall() {
 
     const postMessageBody = {
         recipient: userData.data.email,
-        content: textArea.value
-    }
+        content: textArea.value,
+        writer_location: userLocation
+    };
 
     const postMessageRequest = new XMLHttpRequest();
     postMessageRequest.open("POST", "/post-message", true);
@@ -699,8 +697,15 @@ var displayUserPostWall = function() {
                 postWall.innerHTML = "";
 
                 for (let i = response.messages.length - 1; i >= 0 ; i--) {
-                    postWall.innerHTML +=
-                        `<br><b><div style="color:red">${response.messages[i].writer}</b></div> ${response.messages[i].content}<br>`;
+                    if (response.messages[i].writer_location == undefined) {
+                        postWall.innerHTML +=
+                        `<br><b><div style="color:red">${response.messages[i].writer}</div></b></div> ${response.messages[i].content}<br>`;
+                    }
+                    else {
+                        postWall.innerHTML +=
+                        `<br><b><div style="color:red">${response.messages[i].writer}</div>
+                         <b><div style="color:green">${response.messages[i].writer_location}</b></div> ${response.messages[i].content}<br>`;
+                    }
                 }
             }
             else if (getUserMessagesRequest.status == 401) {
@@ -926,5 +931,56 @@ var recoverPassword = function() {
                 );
             }
         }
+    }
+}
+
+var getCurrentUserLocation = async function() {
+    try {
+        const position = await new Promise((resolve, reject) => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            } else {
+                reject({latitude: undefined, longitude: undefined});
+            }
+        });
+
+        const currentLocation = document.getElementById("current-location-value");
+        const tokenValue = localStorage.getItem(localStorageKey.token);
+
+        const coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+        }
+
+        if (coords.latitude == undefined || coords.longitude == undefined) {
+            return;
+        }
+
+        const getLocationNameRequest = new XMLHttpRequest()
+        getLocationNameRequest.open("GET", "/get-location-name/" + coords.latitude + "/" + coords.longitude, true);
+        getLocationNameRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        getLocationNameRequest.setRequestHeader("token", tokenValue);
+        getLocationNameRequest.onreadystatechange = function() {
+            if (getLocationNameRequest.readyState == 4) {
+                if (getLocationNameRequest.status == 200) {
+                    const response = JSON.parse(getLocationNameRequest.response);
+
+                    userLocation = `${response.country}, ${response.city}`;
+                    currentLocation.innerHTML = userLocation;
+                }
+                else if (getLocationNameRequest.status == 401) {
+                    return;
+                }
+                else if (getLocationNameRequest.status == 500) {
+                    return;
+                }
+            }
+        }
+        getLocationNameRequest.send();
+    } catch (error) {
+        console.log(error);
+        const currentLocation = document.getElementById("current-location-value");
+        userLocation = null;
+        currentLocation.value = "-";
     }
 }

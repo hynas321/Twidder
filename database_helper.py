@@ -46,10 +46,11 @@ class LoggedInUser:
         self.email = email
 
 class Message:
-    def __init__(self, email: str, writer: str, content: str):
+    def __init__(self, email: str, writer: str, content: str, writer_location: str):
         self.email = email
         self.writer = writer
         self.content = content
+        self.writer_location = writer_location
 
 class UserDAO:
     def create_user(self, user: User) -> bool:
@@ -264,7 +265,7 @@ class LoggedInUserDAO:
             return DatabaseOutput.ERROR
 
 class MessageDao:
-    def add_message(self, token: str, content: str, email: str) -> bool:
+    def add_message(self, token: str, content: str, email: str, writer_location: str) -> bool:
         try:
             user_dao = UserDAO()
 
@@ -277,12 +278,16 @@ class MessageDao:
 
             if recipient_user is DatabaseOutput.NONE:
                 return False
+            
+            if writer_location is "null":
+                writer_location = None
 
-            get_db().execute("INSERT INTO Message VALUES (?, ?, ?)",
+            get_db().execute("INSERT INTO Message VALUES (?, ?, ?, ?)",
                 [
                     recipient_user.email,
                     writer_user.email,
-                    content
+                    content,
+                    writer_location
                 ]
             )
             get_db().commit()
@@ -312,7 +317,9 @@ class MessageDao:
 
             result: list = []
             for output in cursor_output:
-                result.append({"recipient": output[0], "writer": output[1], "content": output[2]})
+                result.append({"recipient": output[0], "writer": output[1], 
+                               "content": output[2], "writer_location": output[3]}
+                )
 
             cursor.close()
 
@@ -335,7 +342,14 @@ class MessageDao:
 
             result: list = []
             for output in cursor_output:
-                result.append({"recipient": output[0], "writer": output[1], "content": output[2]})
+                if not output[3] is "null":
+                    result.append({"recipient": output[0], "writer": output[1], 
+                        "content": output[2], "writer_location": output[3]}
+                    )
+                else:
+                    result.append({"recipient": output[0], "writer": output[1], 
+                        "content": output[2]}
+                    )
 
             cursor.close()
 

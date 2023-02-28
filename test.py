@@ -15,11 +15,13 @@ class SeleniumTests(unittest.TestCase):
 
     #Test 1
     def test_webpage_title(self):
+        print("Running Test 1")
         self.assertEqual(self.webdriver.title, "Twidder")
         time.sleep(4)
 
     #Test 2 - Welcome view
     def test_sign_up_different_passwords(self):
+        print("Running Test 2")
         test_user = TestUser()
 
         self.webdriver.find_element(By.ID, "firstName").send_keys(test_user.first_name)
@@ -39,6 +41,7 @@ class SeleniumTests(unittest.TestCase):
 
     #Test 3 - Welcome view
     def test_sign_in_too_short_password(self):
+        print("Running Test 3")
         test_user = TestUser()
 
         self.webdriver.find_element(By.ID, "signInEmail").send_keys(test_user.email)
@@ -52,6 +55,7 @@ class SeleniumTests(unittest.TestCase):
 
     #Test 4 - Home tab
     def test_user_data_displayed(self):
+        print("Running Test 4")
         test_user = TestUser()
         self.__sign_in()
 
@@ -75,6 +79,7 @@ class SeleniumTests(unittest.TestCase):
 
     #Test 5 - Account tab
     def test_password_change_incorrect_current_password(self):
+        print("Running Test 5")
         self.__sign_in()
 
         self.webdriver.find_element(By.ID, "btn-account-tab").click()
@@ -92,6 +97,7 @@ class SeleniumTests(unittest.TestCase):
 
     #Test 6 - Browse tab
     def test_searched_user_does_not_exist(self):
+        print("Running Test 6")
         self.__sign_in()
 
         self.webdriver.find_element(By.ID, "btn-browse-tab").click()
