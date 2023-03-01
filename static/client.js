@@ -1,6 +1,5 @@
 const minPasswordLength = 6;
 var socket;
-var userLocation;
 var userDataRetrieved = false;
 
 const displayProperty = {
@@ -27,7 +26,8 @@ window.onload = function() {
     }
     else {
         manageSocket();
-        displayProfileView(tokenValue);
+        setCurrentUserLocation();
+        displayProfileView();
     }
 };
 
@@ -116,7 +116,6 @@ var signIn = function(signInFormData) {
 
     signInRequest.open("POST", "/sign-in", true)
     signInRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    signInRequest.send(JSON.stringify(credentials))
     signInRequest.onreadystatechange = function() {
         if (signInRequest.readyState == 4) {
             if (signInRequest.status == 201) {
@@ -165,6 +164,7 @@ var signIn = function(signInFormData) {
             }
         }
     }
+    signInRequest.send(JSON.stringify(credentials));
 }
 
 var signUp = function(signUpFormData) {
@@ -205,7 +205,6 @@ var signUp = function(signUpFormData) {
 
     signUpRequest.open("POST", "/sign-up", true);
     signUpRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    signUpRequest.send(JSON.stringify(userDataObject));
     signUpRequest.onreadystatechange = function() {
         if (signUpRequest.readyState == 4) {
             if (signUpRequest.status == 201) {
@@ -246,6 +245,7 @@ var signUp = function(signUpFormData) {
             }
         }
     }
+    signUpRequest.send(JSON.stringify(userDataObject));
 }
 
 var isPasswordLengthCorrect = function(passwordString) {
@@ -296,7 +296,6 @@ var changePassword = function(changePasswordFormData) {
     changePasswordRequest.open("PUT", "/change-password", true);
     changePasswordRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     changePasswordRequest.setRequestHeader("token", tokenValue);
-    changePasswordRequest.send(JSON.stringify(passwords))
     changePasswordRequest.onreadystatechange = function() {
         if (changePasswordRequest.readyState == 4) {
             if (changePasswordRequest.status == 200) {
@@ -343,6 +342,7 @@ var changePassword = function(changePasswordFormData) {
             }
         }
     }
+    changePasswordRequest.send(JSON.stringify(passwords));
 }
 
 var signOut = function(optionalMessage, optionalSuccess) {
@@ -352,10 +352,10 @@ var signOut = function(optionalMessage, optionalSuccess) {
     signOutRequest.open("DELETE", "/sign-out", true);
     signOutRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     signOutRequest.setRequestHeader("token", tokenValue);
-    signOutRequest.send();
     signOutRequest.onreadystatechange = function() {
         if (signOutRequest.readyState == 4) {
             userDataRetrieved = false;
+            removeCurrentUserLocation();
             socket.emit("handle-user-disconnected", {"data": tokenValue});
             clearLocalStorage();
             displayWelcomeView();
@@ -391,6 +391,7 @@ var signOut = function(optionalMessage, optionalSuccess) {
             }
         }
     }
+    signOutRequest.send();
 }
 
 //*** User Profile ***
@@ -402,23 +403,24 @@ var displayUserProfile = function() {
     if (userDataRetrieved) {
         return;
     }
-
+    
     getUserDataRequest.open("GET", "/get-user-data-by-token", true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
-    getUserDataRequest.send();
     getUserDataRequest.onreadystatechange = function() {
         if (getUserDataRequest.readyState == 4) {
             if (getUserDataRequest.status == 200) {
                 const userData = JSON.parse(getUserDataRequest.response);
-
+                
+                setCurrentUserLocation();
                 document.getElementById("email-value").textContent = userData.data.email;
                 document.getElementById("firstname-value").textContent = userData.data.firstname;
                 document.getElementById("familyname-value").textContent = userData.data.familyname;
                 document.getElementById("gender-value").textContent = userData.data.gender;
                 document.getElementById("city-value").textContent = userData.data.city;
                 document.getElementById("country-value").textContent = userData.data.country;
-                getCurrentUserLocation();
+                document.getElementById("current-location-value").textContent =
+                    userData.data.current_location != null ? userData.data.current_location : "-";
                 
                 userDataRetrieved = true;
                 displayUserPostWall();
@@ -448,6 +450,7 @@ var displayUserProfile = function() {
             }
         }
     }
+    getUserDataRequest.send();
 }
     
 var displaySearchedUserProfile = function(browseFormDataObject) {
@@ -460,7 +463,6 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
     getUserDataRequest.open("GET", "/get-user-data-by-email/" + email, true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
-    getUserDataRequest.send();
     getUserDataRequest.onreadystatechange = function() {
         if (getUserDataRequest.readyState == 4) {
             if (getUserDataRequest.status == 200) {
@@ -476,6 +478,8 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
                 document.getElementById("searched-gender-value").textContent = userData.data.gender;
                 document.getElementById("searched-city-value").textContent = userData.data.city;
                 document.getElementById("searched-country-value").textContent = userData.data.country;
+                document.getElementById("searched-current-location-value").textContent =
+                    userData.data.current_location != null ? userData.data.current_location : "-";
             
                 embeddedTab.style.display = displayProperty.block;
                 
@@ -508,10 +512,11 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
             }
         }
     }
+    getUserDataRequest.send();
 }
 
 //*** Post Wall ***
-async function postMessageToUserWall() {
+var postMessageToUserWall = async function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const homeTabStatusMessageElement = document.getElementById("home-tab-status-message");
     const textArea = document.getElementById("text-area");
@@ -548,14 +553,13 @@ async function postMessageToUserWall() {
     const postMessageBody = {
         recipient: userData.data.email,
         content: textArea.value,
-        writer_location: userLocation
+        writer_location: userData.data.current_location
     };
 
     const postMessageRequest = new XMLHttpRequest();
     postMessageRequest.open("POST", "/post-message", true);
     postMessageRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     postMessageRequest.setRequestHeader("token", tokenValue);
-    postMessageRequest.send(JSON.stringify(postMessageBody));
     postMessageRequest.onreadystatechange = function() {
         if (postMessageRequest.readyState == 4) {
 
@@ -607,24 +611,47 @@ async function postMessageToUserWall() {
             }
         }
     }
-  }
+    postMessageRequest.send(JSON.stringify(postMessageBody));
+}
 
-var postMessageToSearchedUserWall = function() {
+var postMessageToSearchedUserWall = async function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const textArea = document.getElementById("searched-text-area");
     const browseTabStatusMessageElement = document.getElementById("browse-tab-status-message");
     const email = document.getElementById("searchedEmail").value;
 
+    const getUserDataRequest = new XMLHttpRequest();
+    getUserDataRequest.open("GET", "/get-user-data-by-token", true);
+    getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    getUserDataRequest.setRequestHeader("token", tokenValue);
+
+    const userCurrentLocation = new Promise((resolve, reject) => {
+        getUserDataRequest.onreadystatechange = function() {
+            if (getUserDataRequest.readyState == 4) {
+                if (getUserDataRequest.status == 200) {
+                    const response = JSON.parse(getUserDataRequest.response);
+
+                    resolve(`${response.data.current_location}`);
+                }
+                else {
+                    reject(null);
+                }
+            }
+        }
+    });
+
+    getUserDataRequest.send();
+
     const postMessageBody = {
         recipient: email,
-        content: textArea.value
+        content: textArea.value,
+        writer_location: await userCurrentLocation
     }
 
     const postMessageRequest = new XMLHttpRequest();
     postMessageRequest.open("POST", "/post-message", true);
     postMessageRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     postMessageRequest.setRequestHeader("token", tokenValue);
-    postMessageRequest.send(JSON.stringify(postMessageBody));
     postMessageRequest.onreadystatechange = function() {
         if (postMessageRequest.readyState == 4) {
 
@@ -676,18 +703,17 @@ var postMessageToSearchedUserWall = function() {
             }
         }
     }
-
+    postMessageRequest.send(JSON.stringify(postMessageBody));
 }
 
 var displayUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const homeTabStatusMessageElement = document.getElementById("home-tab-status-message");
-
     const getUserMessagesRequest = new XMLHttpRequest();
+
     getUserMessagesRequest.open("GET", "/get-user-messages-by-token", true);
     getUserMessagesRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserMessagesRequest.setRequestHeader("token", tokenValue);
-    getUserMessagesRequest.send();
     getUserMessagesRequest.onreadystatechange = function() {
         if (getUserMessagesRequest.readyState == 4) {
             if (getUserMessagesRequest.status == 200) {
@@ -699,12 +725,12 @@ var displayUserPostWall = function() {
                 for (let i = response.messages.length - 1; i >= 0 ; i--) {
                     if (response.messages[i].writer_location == undefined) {
                         postWall.innerHTML +=
-                        `<br><b><div style="color:red">${response.messages[i].writer}</div></b></div> ${response.messages[i].content}<br>`;
+                        `<br><b><div style="color:red">${response.messages[i].writer}</div></b></div>${response.messages[i].content}<br>`;
                     }
                     else {
                         postWall.innerHTML +=
                         `<br><b><div style="color:red">${response.messages[i].writer}</div>
-                         <b><div style="color:green">${response.messages[i].writer_location}</b></div> ${response.messages[i].content}<br>`;
+                         <b><div style="color:green">${response.messages[i].writer_location}</b></div>${response.messages[i].content}<br>`;
                     }
                 }
             }
@@ -731,6 +757,7 @@ var displayUserPostWall = function() {
             }
         }
     }
+    getUserMessagesRequest.send();
 }
 
 var displaySearchedUserPostWall = function() {
@@ -743,7 +770,6 @@ var displaySearchedUserPostWall = function() {
     getUserMessagesRequest.open("GET", "/get-user-messages-by-email/" + email, true);
     getUserMessagesRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserMessagesRequest.setRequestHeader("token", tokenValue);
-    getUserMessagesRequest.send();
     getUserMessagesRequest.onreadystatechange = function() {
         if (getUserMessagesRequest.readyState == 4) {
             if (getUserMessagesRequest.status == 200) {
@@ -752,8 +778,15 @@ var displaySearchedUserPostWall = function() {
                 postWall.innerHTML = "";
 
                 for (let i = response.messages.length - 1; i >= 0 ; i--) {
-                    postWall.innerHTML +=
-                        `<br><b><div style="color:red">${response.messages[i].writer}</b></div> ${response.messages[i].content}<br>`;
+                    if (response.messages[i].writer_location == undefined) {
+                        postWall.innerHTML +=
+                        `<br><b><div style="color:red">${response.messages[i].writer}</div></b></div>${response.messages[i].content}<br>`;
+                    }
+                    else {
+                        postWall.innerHTML +=
+                        `<br><b><div style="color:red">${response.messages[i].writer}</div>
+                         <b><div style="color:green">${response.messages[i].writer_location}</b></div>${response.messages[i].content}<br>`;
+                    }
                 }
                 return;
             }
@@ -783,6 +816,7 @@ var displaySearchedUserPostWall = function() {
             }
         }
     }
+    getUserMessagesRequest.send();
 }
 
 //*** Tabs ***
@@ -905,7 +939,6 @@ var recoverPassword = function() {
     const recoverPasswordRequest = new XMLHttpRequest()
     recoverPasswordRequest.open("GET", "/recover-password-via-email/" + recoverEmail.value, true);
     recoverPasswordRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    recoverPasswordRequest.send();
     recoverPasswordRequest.onreadystatechange = function() {
         if (recoverPasswordRequest.readyState == 4) {
             if (recoverPasswordRequest.status == 200) {
@@ -932,9 +965,10 @@ var recoverPassword = function() {
             }
         }
     }
+    recoverPasswordRequest.send();
 }
 
-var getCurrentUserLocation = async function() {
+var setCurrentUserLocation = async function() {
     try {
         const position = await new Promise((resolve, reject) => {
             if (navigator.geolocation) {
@@ -943,44 +977,71 @@ var getCurrentUserLocation = async function() {
                 reject({latitude: undefined, longitude: undefined});
             }
         });
-
-        const currentLocation = document.getElementById("current-location-value");
+    
         const tokenValue = localStorage.getItem(localStorageKey.token);
-
+    
         const coords = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
         }
-
+    
         if (coords.latitude == undefined || coords.longitude == undefined) {
             return;
         }
-
-        const getLocationNameRequest = new XMLHttpRequest()
+    
+        const getLocationNameRequest = new XMLHttpRequest();
         getLocationNameRequest.open("GET", "/get-location-name/" + coords.latitude + "/" + coords.longitude, true);
         getLocationNameRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         getLocationNameRequest.setRequestHeader("token", tokenValue);
-        getLocationNameRequest.onreadystatechange = function() {
-            if (getLocationNameRequest.readyState == 4) {
-                if (getLocationNameRequest.status == 200) {
-                    const response = JSON.parse(getLocationNameRequest.response);
-
-                    userLocation = `${response.country}, ${response.city}`;
-                    currentLocation.innerHTML = userLocation;
-                }
-                else if (getLocationNameRequest.status == 401) {
-                    return;
-                }
-                else if (getLocationNameRequest.status == 500) {
-                    return;
+    
+        const getLocationNamePromise = new Promise((resolve, reject) => {
+            getLocationNameRequest.onreadystatechange = function() {
+                if (getLocationNameRequest.readyState == 4) {
+                    if (getLocationNameRequest.status == 200) {
+                        const response = JSON.parse(getLocationNameRequest.response);
+    
+                        resolve(`${response.country}, ${response.city}`);
+                    }
+                    else if (getLocationNameRequest.status == 401) {
+                        reject(undefined);
+                    }
+                    else if (getLocationNameRequest.status == 500) {
+                        reject(undefined);
+                    }
                 }
             }
-        }
+        });
+    
         getLocationNameRequest.send();
-    } catch (error) {
-        console.log(error);
-        const currentLocation = document.getElementById("current-location-value");
-        userLocation = null;
-        currentLocation.value = "-";
+    
+        const currentLocationName = await getLocationNamePromise;
+    
+        if (currentLocationName == undefined) {
+            return;
+        }
+    
+        const requestBody = {
+            current_location: currentLocationName
+        }
+    
+        const setUserCurrentLocationRequest = new XMLHttpRequest();
+        setUserCurrentLocationRequest.open("POST", "/set-user-location", true);
+        setUserCurrentLocationRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        setUserCurrentLocationRequest.setRequestHeader("token", tokenValue);
+        setUserCurrentLocationRequest.send(JSON.stringify(requestBody));
     }
+    catch(error) {}
+}
+
+var removeCurrentUserLocation = function() {
+    const tokenValue = localStorage.getItem(localStorageKey);
+    const requestBody = {
+        current_location: "None"
+    }
+
+    const setUserCurrentLocationRequest = new XMLHttpRequest();
+    setUserCurrentLocationRequest.open("POST", "/set-user-location", true);
+    setUserCurrentLocationRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    setUserCurrentLocationRequest.setRequestHeader("token", tokenValue);
+    setUserCurrentLocationRequest.send(JSON.stringify(requestBody));
 }

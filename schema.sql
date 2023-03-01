@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS User(
     familyname VARCHAR(60),
     gender VARCHAR(60),
     city VARCHAR(60),
-    country VARCHAR(60)
+    country VARCHAR(60),
+    current_location VARCHAR(60)
 )
 
 CREATE TABLE IF NOT EXISTS LoggedInUser(

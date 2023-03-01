@@ -55,6 +55,7 @@ def handle_user_connection(msg):
                         logged_in_user_DAO.delete_logged_in_user_by_token(logged_user["token"])
                         active_websockets.remove(active_socket)
                         emit("close-connection", {"data": "New user logged in to your account"}, room=user_sid)
+                        disconnect()
 
         active_websockets.append({"token": tokenValue, "sid": request.sid})
         newest_websocket = active_websockets[len(active_websockets) - 1]
@@ -66,6 +67,7 @@ def handle_user_connection(msg):
     except Exception as ex:
         print(ex)
         emit("close-connection", {"data": "Connection error"})
+        disconnect()
 
 @socketio.on("handle-user-disconnected")
 def handle_user_disconnected(msg):
@@ -120,7 +122,8 @@ def sign_up():
     if ("email" not in received_json or "password" not in received_json or
         "firstname" not in received_json or "familyname" not in received_json or
         "gender" not in received_json or "city" not in received_json or
-        "country" not in received_json or len(received_json) != 7):
+        "country" not in received_json or "current_location" not in received_json or
+        len(received_json) != 8):
 
         return "", 400
 
@@ -137,7 +140,8 @@ def sign_up():
         received_json["familyname"],
         received_json["gender"],
         received_json["city"],
-        received_json["country"]
+        received_json["country"],
+        received_json["current_location"]
     )
 
     user_DAO = db_helper.UserDAO()
@@ -235,7 +239,8 @@ def get_user_data_by_token():
         "familyname": user.familyname,
         "gender": user.gender,
         "city": user.city,
-        "country": user.country
+        "country": user.country,
+        "current_location": user.current_location
     }
 
     return json.dumps({"data": user_data_without_password}), 200
@@ -265,7 +270,8 @@ def get_user_data_by_email(email: str):
         "familyname": user.familyname,
         "gender": user.gender,
         "city": user.city,
-        "country": user.country
+        "country": user.country,
+        "current_location": user.current_location
     }
 
     return json.dumps({"data": user_data_without_password}), 200
@@ -402,7 +408,6 @@ def recover_password_via_email(email: str):
 
 @app.route("/get-location-name/<latitude>/<longitude>", methods=["GET"])
 def get_location_name(latitude: str, longitude: str):
-    print("REQUEST")
     received_token = request.headers.get("token")
 
     token_manager = db_helper.TokenManager()
@@ -427,6 +432,38 @@ def get_location_name(latitude: str, longitude: str):
 
     return  {"country": country_output, "city": city_output}, 200
 
+@app.route("/set-user-location", methods=["POST"])
+def set_user_location():
+    received_token = request.headers.get("token")
+    received_json = request.get_json()
 
+    token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
+
+    if received_token is None or not is_token_correct:
+        return "", 401
+
+    if ("current_location" not in received_json or len(received_json) != 1):
+        return "", 400
+    
+    user_DAO = db_helper.UserDAO()
+    user = user_DAO.get_user_data_by_token(received_token)
+
+    if user is db_helper.DatabaseOutput.NONE:
+        return "", 404
+
+    if user is db_helper.DatabaseOutput.ERROR:
+        return "", 500
+
+    is_current_location_changed = user_DAO.change_user_current_location(
+        received_token, 
+        received_json["current_location"]
+    )
+
+    if not is_current_location_changed:
+        return "", 500
+    
+    return "", 200
+    
 if __name__ == "__main__":
     socketio.run(app, debug=True, port=5000)

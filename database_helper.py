@@ -30,7 +30,8 @@ class User:
         familyname: str, 
         gender: str, 
         city: str, 
-        country: str
+        country: str,
+        current_location: str
     ):
         self.email = email
         self.password = password
@@ -39,6 +40,7 @@ class User:
         self.gender = gender
         self.city = city
         self.country = country
+        self.current_location = current_location
 
 class LoggedInUser:
     def __init__(self, token: str, email: str):
@@ -55,7 +57,7 @@ class Message:
 class UserDAO:
     def create_user(self, user: User) -> bool:
         try:
-            get_db().execute("INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?)",
+            get_db().execute("INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     user.email,
                     user.password,
@@ -63,7 +65,8 @@ class UserDAO:
                     user.familyname,
                     user.gender,
                     user.city,
-                    user.country
+                    user.country,
+                    user.current_location
                 ]
             )
             get_db().commit()
@@ -91,7 +94,8 @@ class UserDAO:
                 cursor_output[3],
                 cursor_output[4],
                 cursor_output[5],
-                cursor_output[6]
+                cursor_output[6],
+                cursor_output[7]
             )
 
             cursor.close()
@@ -129,7 +133,8 @@ class UserDAO:
                 cursor_output[3],
                 cursor_output[4],
                 cursor_output[5],
-                cursor_output[6]
+                cursor_output[6],
+                cursor_output[7]
             )
 
             cursor.close()
@@ -148,6 +153,25 @@ class UserDAO:
 
             return True
 
+        except Exception as ex:
+            print(ex)
+
+            return False
+        
+    def change_user_current_location(self, token: str, current_location: str) -> bool:
+        try:
+            user_dao = UserDAO()
+
+            user = user_dao.get_user_data_by_token(token)
+
+            if user is DatabaseOutput.NONE:
+                return False
+        
+            get_db().execute("UPDATE User SET current_location = ? WHERE EMAIL = ?", [current_location, user.email])
+            get_db().commit()
+
+            return True
+        
         except Exception as ex:
             print(ex)
 
@@ -279,7 +303,7 @@ class MessageDao:
             if recipient_user is DatabaseOutput.NONE:
                 return False
             
-            if writer_location is "null":
+            if writer_location == "null":
                 writer_location = None
 
             get_db().execute("INSERT INTO Message VALUES (?, ?, ?, ?)",
@@ -342,7 +366,7 @@ class MessageDao:
 
             result: list = []
             for output in cursor_output:
-                if not output[3] is "null":
+                if not output[3] == "null":
                     result.append({"recipient": output[0], "writer": output[1], 
                         "content": output[2], "writer_location": output[3]}
                     )
