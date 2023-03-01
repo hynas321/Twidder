@@ -26,7 +26,6 @@ window.onload = function() {
     }
     else {
         manageSocket();
-        setCurrentUserLocation();
         displayProfileView();
     }
 };
@@ -198,7 +197,8 @@ var signUp = function(signUpFormData) {
         familyname: signUpFormData.familyName.value,
         gender: signUpFormData.gender.value,
         city: signUpFormData.city.value,
-        country: signUpFormData.country.value
+        country: signUpFormData.country.value,
+        current_location: null
     };
 
     const signUpRequest = new XMLHttpRequest();
@@ -355,7 +355,6 @@ var signOut = function(optionalMessage, optionalSuccess) {
     signOutRequest.onreadystatechange = function() {
         if (signOutRequest.readyState == 4) {
             userDataRetrieved = false;
-            removeCurrentUserLocation();
             socket.emit("handle-user-disconnected", {"data": tokenValue});
             clearLocalStorage();
             displayWelcomeView();
@@ -411,7 +410,7 @@ var displayUserProfile = function() {
         if (getUserDataRequest.readyState == 4) {
             if (getUserDataRequest.status == 200) {
                 const userData = JSON.parse(getUserDataRequest.response);
-                
+
                 setCurrentUserLocation();
                 document.getElementById("email-value").textContent = userData.data.email;
                 document.getElementById("firstname-value").textContent = userData.data.firstname;
@@ -709,6 +708,8 @@ var postMessageToSearchedUserWall = async function() {
 var displayUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const homeTabStatusMessageElement = document.getElementById("home-tab-status-message");
+    const postWall = document.getElementById("post-wall");
+    
     const getUserMessagesRequest = new XMLHttpRequest();
 
     getUserMessagesRequest.open("GET", "/get-user-messages-by-token", true);
@@ -718,7 +719,6 @@ var displayUserPostWall = function() {
         if (getUserMessagesRequest.readyState == 4) {
             if (getUserMessagesRequest.status == 200) {
                 const response = JSON.parse(getUserMessagesRequest.response);
-                const postWall = document.getElementById("post-wall");
 
                 postWall.innerHTML = "";
 
@@ -729,7 +729,7 @@ var displayUserPostWall = function() {
                     }
                     else {
                         postWall.innerHTML +=
-                        `<br><b><div style="color:red">${response.messages[i].writer}</div>
+                        `<br><b><div style="color:red">${response.messages[i].writer}</div></b>
                          <b><div style="color:green">${response.messages[i].writer_location}</b></div>${response.messages[i].content}<br>`;
                     }
                 }
@@ -1003,10 +1003,10 @@ var setCurrentUserLocation = async function() {
                         resolve(`${response.country}, ${response.city}`);
                     }
                     else if (getLocationNameRequest.status == 401) {
-                        reject(undefined);
+                        reject(null);
                     }
                     else if (getLocationNameRequest.status == 500) {
-                        reject(undefined);
+                        reject(null);
                     }
                 }
             }
@@ -1015,10 +1015,6 @@ var setCurrentUserLocation = async function() {
         getLocationNameRequest.send();
     
         const currentLocationName = await getLocationNamePromise;
-    
-        if (currentLocationName == undefined) {
-            return;
-        }
     
         const requestBody = {
             current_location: currentLocationName
@@ -1036,7 +1032,7 @@ var setCurrentUserLocation = async function() {
 var removeCurrentUserLocation = function() {
     const tokenValue = localStorage.getItem(localStorageKey);
     const requestBody = {
-        current_location: "None"
+        current_location: null
     }
 
     const setUserCurrentLocationRequest = new XMLHttpRequest();
