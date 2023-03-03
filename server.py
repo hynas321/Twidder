@@ -11,7 +11,7 @@ import smtplib
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
-active_websockets: list = []
+active_websockets: dict = {}
 
 @app.route("/", methods = ["GET"])
 def root():
@@ -23,59 +23,45 @@ def teardown(exception):
 
 @socketio.on("connect")
 def connect():
-    emit('acknowledge-connection', {"data": "Connection opened"})
+    emit('acknowledge-connection', {"message": "Connection opened"})
 
 @socketio.on("handle-user-connected")
 def handle_user_connection(msg):
     try: 
-        tokenValue = msg["data"]
+        token_value = msg["token"]
+        email = msg["email"]
 
-        if not tokenValue:
-            emit("close-connection", {"data": "Connection authentication error"}, room=request.sid)
-            disconnect()
+        token_manager = db_helper.TokenManager()
+        
+        if not token_value or not token_manager.verify_token(token_value):
+            emit("close-connection", {"message": "Connection authentication error"}, room=request.sid)
+            disconnect("Web socket disconnected")
             return
+        
+        if email in active_websockets:
+            user_sid = active_websockets[email]
+            active_websockets.pop(email)
+            emit("close-connection", {"message": "New user connected to your account"}, room=user_sid)
 
-        logged_in_user_DAO = db_helper.LoggedInUserDAO()
-        logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(tokenValue)
-        logged_in_users: list
-
-        if logged_in_user != db_helper.DatabaseOutput.NONE:
-            logged_in_users = logged_in_user_DAO.get_all_logged_in_users_by_email(logged_in_user.email)
-
-        if (not (logged_in_user is db_helper.DatabaseOutput.ERROR or logged_in_user is db_helper.DatabaseOutput.NONE)
-            and len(logged_in_users) > 1):
-
-            user_sid: str
-
-            for logged_user in logged_in_users:
-                for active_socket in active_websockets:
-                    if logged_user["token"] == active_socket["token"]:
-                        user_sid = active_socket["sid"]
-
-                        logged_in_user_DAO.delete_logged_in_user_by_token(logged_user["token"])
-                        active_websockets.remove(active_socket)
-                        emit("close-connection", {"data": "New user logged in to your account"}, room=user_sid)
-                        disconnect()
-
-        active_websockets.append({"token": tokenValue, "sid": request.sid})
-        newest_websocket = active_websockets[len(active_websockets) - 1]
-
-        for active_socket in active_websockets:
-            if active_socket != newest_websocket and active_socket["token"] == newest_websocket["token"]:
-                active_websockets.remove(active_socket)
+        active_websockets[email] = request.sid
 
     except Exception as ex:
         print(ex)
-        emit("close-connection", {"data": "Connection error"})
-        disconnect()
+        emit("close-connection", {"message": "Connection error"})
+        disconnect("Web socket disconnected")
 
-@socketio.on("handle-user-disconnected")
-def handle_user_disconnected(msg):
-    tokenValue = msg["data"]
+@socketio.on("disconnect-user")
+def disconnect_user(msg):
+    token_value = msg["token"]
+    email = msg["email"]
 
-    for active_socket in active_websockets:
-        if active_socket["token"] == tokenValue:
-            active_websockets.remove(active_socket)
+    token_manager = db_helper.TokenManager()
+
+    if not token_value or not token_manager.verify_token(token_value):
+        return
+
+    active_websockets.pop(email)
+    disconnect("Web socket disconnected")
 
 @app.route("/sign-in", methods = ["POST"])
 def sign_in():
@@ -406,15 +392,32 @@ def recover_password_via_email(email: str):
 
     return "", 200
 
-@app.route("/get-location-name/<latitude>/<longitude>", methods=["GET"])
-def get_location_name(latitude: str, longitude: str):
+@app.route("/set-user-location", methods=["POST"])
+def set_user_location():
     received_token = request.headers.get("token")
+    received_json = request.get_json()
 
     token_manager = db_helper.TokenManager()
     is_token_correct = token_manager.verify_token(received_token)
 
     if received_token is None or not is_token_correct:
         return "", 401
+
+    if ("latitude" not in received_json or "longitude" not in received_json or
+        len(received_json) != 2):
+        return "", 400
+    
+    user_DAO = db_helper.UserDAO()
+    user = user_DAO.get_user_data_by_token(received_token)
+
+    if user is db_helper.DatabaseOutput.NONE:
+        return "", 404
+
+    if user is db_helper.DatabaseOutput.ERROR:
+        return "", 500
+    
+    latitude = received_json["latitude"]
+    longitude = received_json["longitude"]
     
     myAPIKey = "bf7fa01b2f0549bda7a3d044e2082845"
     reverseGeocodingUrl = f"https://api.geoapify.com/v1/geocode/reverse?lat={latitude}&lon={longitude}&apiKey={myAPIKey}"
@@ -430,34 +433,9 @@ def get_location_name(latitude: str, longitude: str):
     country_output = resp.json()["features"][0]["properties"]["country"]
     city_output = resp.json()["features"][0]["properties"]["city"]
 
-    return  {"country": country_output, "city": city_output}, 200
-
-@app.route("/set-user-location", methods=["POST"])
-def set_user_location():
-    received_token = request.headers.get("token")
-    received_json = request.get_json()
-
-    token_manager = db_helper.TokenManager()
-    is_token_correct = token_manager.verify_token(received_token)
-
-    if received_token is None or not is_token_correct:
-        return "", 401
-
-    if ("current_location" not in received_json or len(received_json) != 1):
-        return "", 400
-    
-    user_DAO = db_helper.UserDAO()
-    user = user_DAO.get_user_data_by_token(received_token)
-
-    if user is db_helper.DatabaseOutput.NONE:
-        return "", 404
-
-    if user is db_helper.DatabaseOutput.ERROR:
-        return "", 500
-
     is_current_location_changed = user_DAO.change_user_current_location(
         received_token, 
-        received_json["current_location"]
+        f"{country_output}, {city_output}"
     )
 
     if not is_current_location_changed:

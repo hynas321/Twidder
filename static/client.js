@@ -1,6 +1,11 @@
-const minPasswordLength = 6;
 var socket;
-var userDataRetrieved = false;
+
+const minPasswordLength = 6;
+
+const statusMessageName = {
+    welcomeView: "welcome-view-status-message",
+    profileView: "profile-view-status-message"
+};
 
 const displayClass = {
     block: "d-block",
@@ -10,6 +15,7 @@ const displayClass = {
 const localStorageKey = {
     token: "token",
     lastOpenedTab: "last-opened-tab",
+    userEmail: "userEmail"
 };
 
 const tabs = {
@@ -20,12 +26,13 @@ const tabs = {
 
 window.onload = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
+    const userEmail = localStorage.getItem(localStorageKey.userEmail);
 
     if (typeof(tokenValue) != "string") {
         displayWelcomeView();
     }
     else {
-        manageSocket();
+        manageSocket(userEmail);
         displayProfileView();
     }
 };
@@ -33,14 +40,15 @@ window.onload = function() {
 window.addEventListener("beforeunload", function (e) {
     if (socket != undefined) {
         const tokenValue = localStorage.getItem(localStorageKey.token);
-        socket.emit("handle-user-disconnected", {"data": tokenValue});
+        const userEmail = this.localStorage.getItem(localStorageKey.userEmail);
+        socket.emit("disconnect-user", {"token": tokenValue, "email": userEmail});
     }
 });
 
 //*** Views ***
 var displayWelcomeView = function() {
     const body = document.getElementById("body");
-    const welcomeView = document.getElementById("welcomeview");
+    const welcomeView = document.getElementById("welcome-view");
 
     body.innerHTML = welcomeView.innerHTML;
 }
@@ -48,7 +56,7 @@ var displayWelcomeView = function() {
 var displayProfileView = function() {
     const lastTabValue = localStorage.getItem(localStorageKey.lastOpenedTab);
     const body = document.getElementById("body");
-    const profileView = document.getElementById("profileview");
+    const profileView = document.getElementById("profile-view");
 
     body.innerHTML = profileView.innerHTML;
 
@@ -74,32 +82,34 @@ var displayRecoverPasswordView = function() {
 }
 
 var displayStatusMessage = function(statusMessageElement, statusMessage, success) {
+    const visiblityMilliseconds = 4500;
+    const classAlertDanger = "alert-danger";
+    const classAlertPrimary = "alert-primary"
 
-    if (success) {
-        statusMessageElement.classList.replace("alert-danger", "alert-primary");
+    if (success && statusMessageElement.classList.contains(classAlertDanger)) {
+        statusMessageElement.classList.replace(classAlertDanger, classAlertPrimary);
     }
-    else {
-        statusMessageElement.classList.replace("alert-primary", "alert-danger");
+    else if (!success && statusMessageElement.classList.contains(classAlertPrimary)) {
+        statusMessageElement.classList.replace(classAlertPrimary, classAlertDanger);
     }
 
     statusMessageElement.classList.replace(displayClass.none, displayClass.block);
     statusMessageElement.textContent = statusMessage;
 
-
     setTimeout(()=> {
         statusMessageElement.classList.replace(displayClass.block, displayClass.none);
-    }, 4000)
+    }, visiblityMilliseconds);
 }
 
 //*** Account ***
 var signIn = function(signInFormData) {
+    const welcomeViewStatusMessage = document.getElementById(statusMessageName.welcomeView);
     const emailString = signInFormData.signInEmail.value;
     const passwordString = signInFormData.signInPassword.value;
-    const statusMessageElement = document.getElementById("welcome-view-status-message");
 
     if (!isPasswordLengthCorrect(passwordString)) {
         displayStatusMessage(
-            statusMessageElement,
+            welcomeViewStatusMessage,
             `Incorrect password length, allowed min length = ${minPasswordLength}`,
             false
         );
@@ -113,7 +123,6 @@ var signIn = function(signInFormData) {
     };
 
     const signInRequest = new XMLHttpRequest();
-
     signInRequest.open("POST", "/sign-in", true)
     signInRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     signInRequest.onreadystatechange = function() {
@@ -122,42 +131,43 @@ var signIn = function(signInFormData) {
                 const jsonResponse = JSON.parse(signInRequest.responseText);
 
                 localStorage.setItem(localStorageKey.token, jsonResponse.token);
-                loggedInUserEmail = credentials.email;
+                localStorage.setItem(localStorageKey.userEmail, credentials.email);
 
-                manageSocket();
+                manageSocket(credentials.email);
+                setCurrentUserLocation();
                 displayProfileView();
             }
             else if (signInRequest.status == 400) {
                 displayStatusMessage(
-                    statusMessageElement,
+                    welcomeViewStatusMessage,
                     "Missing credentials",
                     false
                 );
             }
             else if (signInRequest.status == 404) {
                 displayStatusMessage(
-                    statusMessageElement,
+                    welcomeViewStatusMessage,
                     "User not found",
                     false
                 );
             }
             else if (signInRequest.status == 401) {
                 displayStatusMessage(
-                    statusMessageElement,
+                    welcomeViewStatusMessage,
                     "Incorrect credentials",
                     false
                 );
             }
             else if (signInRequest.status == 500) {
                 displayStatusMessage(
-                    statusMessageElement,
+                    welcomeViewStatusMessage,
                     "Unexpected error, try again",
                     false
                 );
             }
             else {
                 displayStatusMessage(
-                    statusMessageElement,
+                    welcomeViewStatusMessage,
                     "Unexpected error, try again",
                     false
                 );
@@ -168,13 +178,13 @@ var signIn = function(signInFormData) {
 }
 
 var signUp = function(signUpFormData) {
+    const welcomeViewStatusMessage = document.getElementById(statusMessageName.welcomeView);
     const passwordString = signUpFormData.signUpPassword.value;
     const repeatedPasswordString = signUpFormData.repeatedSignUpPassword.value;
-    const statusMessageElement = document.getElementById("welcome-view-status-message");
 
     if (!(passwordString == repeatedPasswordString)) {
         displayStatusMessage(
-            statusMessageElement,
+            welcomeViewStatusMessage,
             "Password and the repeated password are not the same",
             false
         );
@@ -183,7 +193,7 @@ var signUp = function(signUpFormData) {
     }
     else if (!isPasswordLengthCorrect(passwordString) || !isPasswordLengthCorrect(repeatedPasswordString)) {
         displayStatusMessage(
-            statusMessageElement,
+            welcomeViewStatusMessage,
             `Incorrect password length, allowed min length = ${minPasswordLength}`,
             false
         );
@@ -203,14 +213,13 @@ var signUp = function(signUpFormData) {
     };
 
     const signUpRequest = new XMLHttpRequest();
-
     signUpRequest.open("POST", "/sign-up", true);
     signUpRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     signUpRequest.onreadystatechange = function() {
         if (signUpRequest.readyState == 4) {
             if (signUpRequest.status == 201) {
                 displayStatusMessage(
-                    statusMessageElement,
+                    welcomeViewStatusMessage,
                     `Account ${userDataObject.email} created successfully`,
                     true
                 )
@@ -225,21 +234,21 @@ var signUp = function(signUpFormData) {
             }
             else if (signUpRequest.status == 400) {
                 displayStatusMessage(
-                    statusMessageElement,
+                    welcomeViewStatusMessage,
                     "Missing credentials",
                     false
                 );               
             }
             else if (signUpRequest.status == 200) {
                 displayStatusMessage(
-                    statusMessageElement,
+                    welcomeViewStatusMessage,
                     "User already exists",
                     false
                 );       
             }
             else {
                 displayStatusMessage(
-                    statusMessageElement,
+                    welcomeViewStatusMessage,
                     "Unexpected error, try again",
                     false
                 );
@@ -259,17 +268,17 @@ var isPasswordLengthCorrect = function(passwordString) {
 
 var changePassword = function(changePasswordFormData) {
     const tokenValue = localStorage.getItem(localStorageKey.token);
+    const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
     const oldPassword = changePasswordFormData.oldPassword.value;
     const newPassword = changePasswordFormData.newPassword.value; 
     const repeatedNewPassword = changePasswordFormData.repeatedNewPassword.value;
-    const accountTabStatusMessageElement = document.getElementById("profile-view-status-message");
 
     if (!isPasswordLengthCorrect(oldPassword) ||
         !isPasswordLengthCorrect(newPassword) ||
         !isPasswordLengthCorrect(repeatedNewPassword)) {
 
         displayStatusMessage(
-            accountTabStatusMessageElement,
+            profileViewStatusMessage,
             `Incorrect password length, allowed min length = ${minPasswordLength}`,
             false
         );
@@ -279,7 +288,7 @@ var changePassword = function(changePasswordFormData) {
 
     if (newPassword != repeatedNewPassword) {
         displayStatusMessage(
-            accountTabStatusMessageElement,
+            profileViewStatusMessage,
             "New password and the repeated password are not the same",
             false
         );
@@ -293,7 +302,6 @@ var changePassword = function(changePasswordFormData) {
     };
 
     const changePasswordRequest = new XMLHttpRequest();
-
     changePasswordRequest.open("PUT", "/change-password", true);
     changePasswordRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     changePasswordRequest.setRequestHeader("token", tokenValue);
@@ -301,42 +309,42 @@ var changePassword = function(changePasswordFormData) {
         if (changePasswordRequest.readyState == 4) {
             if (changePasswordRequest.status == 200) {
                 displayStatusMessage(
-                    accountTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Password changed successfully",
                     true
                 );
             }
             else if (changePasswordRequest.status == 400) {
                 displayStatusMessage(
-                    accountTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Missing input",
                     false
                 );
             }
             else if (changePasswordRequest.status == 401) {
                 displayStatusMessage(
-                    accountTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "You are not logged in, try to sign in again",
                     false
                 );
             }
             else if (changePasswordRequest.status == 404) {
                 displayStatusMessage(
-                    accountTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "User not found, try to sign in again",
                     false
                 );
             }
             else if (changePasswordRequest.status == 409) {
                 displayStatusMessage(
-                    accountTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Incorrect password input(s): incorrect old password or the new password is the same as the old",
                     false
                 );
             }
             else {
                 displayStatusMessage(
-                    accountTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Password change error",
                     false
                 );
@@ -346,43 +354,40 @@ var changePassword = function(changePasswordFormData) {
     changePasswordRequest.send(JSON.stringify(passwords));
 }
 
-var signOut = function(optionalMessage, optionalSuccess) {
+var signOut = function(closeSocketConnection) {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    const signOutRequest = new XMLHttpRequest();
+    const userEmail = this.localStorage.getItem(localStorageKey.userEmail);
+    const statusMessageElement = document.getElementById(statusMessageName.welcomeView);
 
+    if (closeSocketConnection == true) {
+
+        socket.emit("disconnect-user", {"token": tokenValue, "email": userEmail});
+    }
+
+    const signOutRequest = new XMLHttpRequest();
     signOutRequest.open("DELETE", "/sign-out", true);
     signOutRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     signOutRequest.setRequestHeader("token", tokenValue);
     signOutRequest.onreadystatechange = function() {
         if (signOutRequest.readyState == 4) {
-            userDataRetrieved = false;
-            socket.emit("handle-user-disconnected", {"data": tokenValue});
             clearLocalStorage();
             displayWelcomeView();
 
             if (signOutRequest.status == 200) {
-                if (optionalMessage != undefined && optionalSuccess != undefined) {
-                    const statusMessageElement = document.getElementById("welcome-view-status-message");
-
-                    displayStatusMessage(
-                        statusMessageElement,
-                        optionalMessage,
-                        optionalSuccess
-                    );
-                }
-            }
-            else if (signOutRequest.status == 401) {
-                const statusMessageElement = document.getElementById("welcome-view-status-message");
-
                 displayStatusMessage(
                     statusMessageElement,
-                    "Other user signed in to your account",
+                    "Signed out successfully",
+                    true
+                );
+            }
+            else if (signOutRequest.status == 401) {
+                displayStatusMessage(
+                    statusMessageElement,
+                    "Signed out without authentication",
                     false
                 );
             }
             else if (signOutRequest.status == 500) {
-                const statusMessageElement = document.getElementById("welcome-view-status-message");
-
                 displayStatusMessage(
                     statusMessageElement,
                     "Signed out with unexpected error",
@@ -397,13 +402,9 @@ var signOut = function(optionalMessage, optionalSuccess) {
 //*** User Profile ***
 var displayUserProfile = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    const homeTabStatusMessageElement = document.getElementById("profile-view-status-message");
-    const getUserDataRequest = new XMLHttpRequest();
-
-    if (userDataRetrieved) {
-        return;
-    }
+    const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
     
+    const getUserDataRequest = new XMLHttpRequest();
     getUserDataRequest.open("GET", "/get-user-data-by-token", true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
@@ -412,7 +413,6 @@ var displayUserProfile = function() {
             if (getUserDataRequest.status == 200) {
                 const userData = JSON.parse(getUserDataRequest.response);
 
-                setCurrentUserLocation();
                 document.getElementById("email-value").textContent = userData.data.email;
                 document.getElementById("firstname-value").textContent = userData.data.firstname;
                 document.getElementById("familyname-value").textContent = userData.data.familyname;
@@ -422,28 +422,27 @@ var displayUserProfile = function() {
                 document.getElementById("current-location-value").textContent =
                     userData.data.current_location != null ? userData.data.current_location : "-";
                 
-                userDataRetrieved = true;
                 displayUserPostWall();
                 return;
             }
 
             if (getUserDataRequest.status == 401){
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Authentication error - could not load user data",
                     false
                 );
             }
             else if (getUserDataRequest.status = 404) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "User data not found",
                     false
                 );
             }
             else if (getUserDataRequest.status == 500) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Unexpected error when loading user data",
                     false
                 );
@@ -454,12 +453,12 @@ var displayUserProfile = function() {
 }
     
 var displaySearchedUserProfile = function(browseFormDataObject) {
-    const embeddedTab = document.getElementById("embedded-tab");
-    const browseTabStatusMessageElement = document.getElementById("profile-view-status-message");
     const tokenValue = localStorage.getItem(localStorageKey.token);
+    const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
+    const embeddedTab = document.getElementById("embedded-tab");
     const email = browseFormDataObject.searchedEmail.value;
-    const getUserDataRequest = new XMLHttpRequest();
 
+    const getUserDataRequest = new XMLHttpRequest();
     getUserDataRequest.open("GET", "/get-user-data-by-email/" + email, true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserDataRequest.setRequestHeader("token", tokenValue);
@@ -478,32 +477,30 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
                     userData.data.current_location != null ? userData.data.current_location : "-";
             
                 embeddedTab.classList.replace(displayClass.none, displayClass.block);
-                
+
                 displaySearchedUserPostWall();
                 return;
             }
 
-            if (embeddedTab.classList.contains(displayClass.block)) {
-                embeddedTab.classList.replace(displayClass.block, displayClass.none);
-            }
+            embeddedTab.classList.replace(displayClass.block, displayClass.none);
 
             if (getUserDataRequest.status == 401) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Authentication error, could not load user data",
                     false
                 );
             }
             else if (getUserDataRequest.status == 404) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "User not found",
                     false
                 );
             }
             else if (getUserDataRequest.status == 500) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Unexpected error, could not load user data",
                     false
                 );
@@ -516,7 +513,7 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
 //*** Post Wall ***
 var postMessageToUserWall = async function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    const homeTabStatusMessageElement = document.getElementById("profile-view-status-message");
+    const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
     const textArea = document.getElementById("text-area");
 
     const getUserDataRequest = new XMLHttpRequest();    
@@ -533,7 +530,7 @@ var postMessageToUserWall = async function() {
                 } 
                 else {
                     displayStatusMessage(
-                        homeTabStatusMessageElement,
+                        profileViewStatusMessage,
                         "Account data error",
                         false
                     );
@@ -560,10 +557,9 @@ var postMessageToUserWall = async function() {
     postMessageRequest.setRequestHeader("token", tokenValue);
     postMessageRequest.onreadystatechange = function() {
         if (postMessageRequest.readyState == 4) {
-
             if (postMessageRequest.status == 201) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Message posted successfully",
                     true
                 );
@@ -573,28 +569,28 @@ var postMessageToUserWall = async function() {
             }
             else if (postMessageRequest.status == 401) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Authentication error - message not sent",
                     false
                 );
             }
             else if (postMessageRequest.status == 400) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Message cannot be empty",
                     false
                 );
             }
             else if (postMessageRequest.status == 404) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "User not found - message not sent",
                     false
                 );
             }
             else if (postMessageRequest.status == 500) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Unexpected error - message not sent",
                     false
                 );
@@ -606,8 +602,8 @@ var postMessageToUserWall = async function() {
 
 var postMessageToSearchedUserWall = async function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
+    const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
     const textArea = document.getElementById("searched-text-area");
-    const browseTabStatusMessageElement = document.getElementById("profile-view-status-message");
     const email = document.getElementById("searchedEmail").value;
 
     const getUserDataRequest = new XMLHttpRequest();
@@ -644,10 +640,9 @@ var postMessageToSearchedUserWall = async function() {
     postMessageRequest.setRequestHeader("token", tokenValue);
     postMessageRequest.onreadystatechange = function() {
         if (postMessageRequest.readyState == 4) {
-
             if (postMessageRequest.status == 201) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Message posted successfully",
                     true
                 );
@@ -657,28 +652,28 @@ var postMessageToSearchedUserWall = async function() {
             }
             else if (postMessageRequest.status == 401) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Authentication error - message not sent",
                     false
                 );
             }
             else if (postMessageRequest.status == 400) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Message cannot be empty",
                     false
                 );
             }
             else if (postMessageRequest.status == 404) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "User not found - message not sent",
                     false
                 );
             }
             else if (postMessageRequest.status == 500) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Unexpected error - message not sent",
                     false
                 );
@@ -690,11 +685,10 @@ var postMessageToSearchedUserWall = async function() {
 
 var displayUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    const homeTabStatusMessageElement = document.getElementById("profile-view-status-message");
+    const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
     const postWall = document.getElementById("post-wall");
     
     const getUserMessagesRequest = new XMLHttpRequest();
-
     getUserMessagesRequest.open("GET", "/get-user-messages-by-token", true);
     getUserMessagesRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserMessagesRequest.setRequestHeader("token", tokenValue);
@@ -729,21 +723,21 @@ var displayUserPostWall = function() {
             }
             else if (getUserMessagesRequest.status == 401) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Authentication error - messages could not be displayed",
                     false
                 );
             }
             else if (getUserMessagesRequest.status == 404) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "No messages to display",
                     true
                 );
             }
             else if (getUserMessagesRequest.status == 500) {
                 displayStatusMessage(
-                    homeTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Unexpected error - messages could not be displayed",
                     true
                 );
@@ -756,10 +750,10 @@ var displayUserPostWall = function() {
 var displaySearchedUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const email = document.getElementById("searchedEmail").value;
-    const browseTabStatusMessageElement = document.getElementById("profile-view-status-message");
+    const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
     const postWall = document.getElementById("searched-post-wall");
-    const getUserMessagesRequest = new XMLHttpRequest();
 
+    const getUserMessagesRequest = new XMLHttpRequest();
     getUserMessagesRequest.open("GET", "/get-user-messages-by-email/" + email, true);
     getUserMessagesRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     getUserMessagesRequest.setRequestHeader("token", tokenValue);
@@ -798,21 +792,21 @@ var displaySearchedUserPostWall = function() {
 
             if (getUserMessagesRequest.status == 401) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Authentication error - messages could not be displayed",
                     false
                 );
             }
             else if (getUserMessagesRequest.status == 404) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "No messages to display",
                     true
                 );
             }
             else if (getUserMessagesRequest.status == 500) {
                 displayStatusMessage(
-                    browseTabStatusMessageElement,
+                    profileViewStatusMessage,
                     "Unexpected error - messages could not be displayed",
                     true
                 );
@@ -828,7 +822,7 @@ var displayHomeTab = function() {
 
     clearTabs();
     setActiveButton(tabs.home);
-    setLocalStorageValue(localStorageKey.lastOpenedTab, tabs.home);
+    updateLocalStorageValue(localStorageKey.lastOpenedTab, tabs.home);
 
     homeTab.classList.replace(displayClass.none, displayClass.block);
 
@@ -840,7 +834,7 @@ var displayAccountTab = function() {
 
     clearTabs();
     setActiveButton(tabs.account);
-    setLocalStorageValue(localStorageKey.lastOpenedTab, tabs.account);
+    updateLocalStorageValue(localStorageKey.lastOpenedTab, tabs.account);
 
     accountTab.classList.replace(displayClass.none, displayClass.block);
 }
@@ -850,32 +844,19 @@ var displayBrowseTab = function() {
 
     clearTabs();
     setActiveButton(tabs.browse);
-    setLocalStorageValue(localStorageKey.lastOpenedTab, tabs.browse);
+    updateLocalStorageValue(localStorageKey.lastOpenedTab, tabs.browse);
 
     browseTab.classList.replace(displayClass.none, displayClass.block);
 }
     
 var clearTabs = function() {
     const homeTab = document.getElementById("home-tab");
-
-    if (homeTab.classList.contains(displayClass.block)) {
-        homeTab.classList.replace(displayClass.block, displayClass.none);
-        return;
-    }
-
     const accountTab = document.getElementById("account-tab");
-
-    if (accountTab.classList.contains(displayClass.block)) {
-        accountTab.classList.replace(displayClass.block, displayClass.none);;
-        return;
-    }
-
     const browseTab = document.getElementById("browse-tab");
 
-    if (browseTab.classList.contains(displayClass.block)) {
-        browseTab.classList.replace(displayClass.block, displayClass.none);;
-        return;
-    }
+    homeTab.classList.replace(displayClass.block, displayClass.none);
+    accountTab.classList.replace(displayClass.block, displayClass.none);
+    browseTab.classList.replace(displayClass.block, displayClass.none);
 }
 
 var setActiveButton = function(tabName) {
@@ -904,7 +885,7 @@ var setActiveButton = function(tabName) {
 }
 
 //*** Local storage ***
-var setLocalStorageValue = function(key, stringValue) {
+var updateLocalStorageValue = function(key, stringValue) {
     localStorage.removeItem(key);
     localStorage.setItem(key, stringValue);
 }
@@ -912,23 +893,32 @@ var setLocalStorageValue = function(key, stringValue) {
 var clearLocalStorage = function() {
     localStorage.removeItem(localStorageKey.token);
     localStorage.removeItem(localStorageKey.lastOpenedTab);
+    localStorage.removeItem(localStorageKey.userEmail);
 }
 
 //*** Web socket ***
-var manageSocket = function() {
+var manageSocket = function(email) {
     const tokenValue = localStorage.getItem(localStorageKey.token);
 
     socket = io.connect('http://localhost:5000');
 
     socket.on('close-connection', function(msg) {
-        signOut(msg.data, false);
+        const welcomeViewStatusMessage = document.getElementById(statusMessageName.welcomeView);
+
+        signOut(false);
+        displayStatusMessage(
+            welcomeViewStatusMessage,
+            msg.message,
+            false
+        );
     });
 
     socket.on('acknowledge-connection', function() {
-        socket.emit('handle-user-connected', {"data": tokenValue})
+        socket.emit('handle-user-connected', {"token": tokenValue, "email": email})
     });
 }
 
+//*** Password recovery ***
 var recoverPassword = function() {
     const recoverEmail = document.getElementById("recover-email")
     const recoverPasswordStatusMessage = document.getElementById("recover-password-view-status-message")
@@ -971,8 +961,12 @@ var recoverPassword = function() {
     recoverPasswordRequest.send();
 }
 
+//*** Geolocation ***
 var setCurrentUserLocation = async function() {
     try {
+        const tokenValue = localStorage.getItem(localStorageKey.token);
+        const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
+
         const position = await new Promise((resolve, reject) => {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(resolve, reject);
@@ -980,9 +974,7 @@ var setCurrentUserLocation = async function() {
                 reject({latitude: undefined, longitude: undefined});
             }
         });
-    
-        const tokenValue = localStorage.getItem(localStorageKey.token);
-    
+
         const coords = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
@@ -992,55 +984,48 @@ var setCurrentUserLocation = async function() {
             return;
         }
     
-        const getLocationNameRequest = new XMLHttpRequest();
-        getLocationNameRequest.open("GET", "/get-location-name/" + coords.latitude + "/" + coords.longitude, true);
-        getLocationNameRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-        getLocationNameRequest.setRequestHeader("token", tokenValue);
-    
-        const getLocationNamePromise = new Promise((resolve, reject) => {
-            getLocationNameRequest.onreadystatechange = function() {
-                if (getLocationNameRequest.readyState == 4) {
-                    if (getLocationNameRequest.status == 200) {
-                        const response = JSON.parse(getLocationNameRequest.response);
-    
-                        resolve(`${response.country}, ${response.city}`);
-                    }
-                    else if (getLocationNameRequest.status == 401) {
-                        reject(null);
-                    }
-                    else if (getLocationNameRequest.status == 500) {
-                        reject(null);
-                    }
-                }
-            }
-        });
-    
-        getLocationNameRequest.send();
-    
-        const currentLocationName = await getLocationNamePromise;
-    
-        const requestBody = {
-            current_location: currentLocationName
-        }
-    
         const setUserCurrentLocationRequest = new XMLHttpRequest();
         setUserCurrentLocationRequest.open("POST", "/set-user-location", true);
         setUserCurrentLocationRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         setUserCurrentLocationRequest.setRequestHeader("token", tokenValue);
-        setUserCurrentLocationRequest.send(JSON.stringify(requestBody));
+        if (setUserCurrentLocationRequest.readyState == 4) {
+            if (setUserCurrentLocationRequest.status == 200) {
+                displayStatusMessage(
+                    profileViewStatusMessage,
+                    "Location set successfully",
+                    true
+                );
+            }
+            else if (setUserCurrentLocationRequest.status == 400) {
+                displayStatusMessage(
+                    profileViewStatusMessage,
+                    "Incorrect coordinates, location not set",
+                    true
+                );
+            }
+            else if (setUserCurrentLocationRequest.status == 401) {
+                displayStatusMessage(
+                    profileViewStatusMessage,
+                    "Authentication error, location not set",
+                    true
+                );
+            }
+            else if (setUserCurrentLocationRequest.status == 404) {
+                displayStatusMessage(
+                    profileViewStatusMessage,
+                    "User not found, location not set",
+                    true
+                );
+            }
+            else if (setUserCurrentLocationRequest.status == 404) {
+                displayStatusMessage(
+                    profileViewStatusMessage,
+                    "Unexpected error, location not set",
+                    true
+                );
+            }
+        }
+        setUserCurrentLocationRequest.send(JSON.stringify(coords));
     }
     catch(error) {}
-}
-
-var removeCurrentUserLocation = function() {
-    const tokenValue = localStorage.getItem(localStorageKey);
-    const requestBody = {
-        current_location: null
-    }
-
-    const setUserCurrentLocationRequest = new XMLHttpRequest();
-    setUserCurrentLocationRequest.open("POST", "/set-user-location", true);
-    setUserCurrentLocationRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    setUserCurrentLocationRequest.setRequestHeader("token", tokenValue);
-    setUserCurrentLocationRequest.send(JSON.stringify(requestBody));
 }

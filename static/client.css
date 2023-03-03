@@ -1,17 +1,28 @@
 .message-input {
     resize: none;
     width: 80%;
-    height: 200px;
+    height: 150px;
+}
+
+.post-wall {
+    max-height: 560px; 
+    overflow-y: auto;
+}
+
+.info-p {
+    display: inline;
 }
 
 .profile-view-tab {
     display: none;
 }
 
-.welcome-view {
-    transform: scale(0.95);
+.welcome-view-image {
+    max-width: auto;
+    height: 100%;
+    object-fit: contain;
 }
 
 html {
     overflow-y: scroll;
-  }
+}

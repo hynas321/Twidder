@@ -180,8 +180,9 @@ class UserDAO:
 class LoggedInUserDAO:
     def create_logged_in_user(self, logged_in_user: LoggedInUser) -> bool:
         try:
-            get_db().execute("INSERT INTO LoggedInUser VALUES (?, ?)",
+            get_db().execute("INSERT INTO LoggedInUser VALUES (?, ?, ?)",
                 [
+                    None,
                     logged_in_user.token,
                     logged_in_user.email
                 ]
@@ -260,28 +261,6 @@ class LoggedInUserDAO:
             cursor.close()
 
             return logged_in_user
-
-        except Exception as ex:
-            print(ex)
-
-            return DatabaseOutput.ERROR
-
-    def get_all_logged_in_users_by_email(self, email: str):
-        try:
-            cursor = get_db().cursor()
-            cursor.execute("SELECT * FROM LoggedInUser WHERE email = ?", [email])
-            cursor_output = cursor.fetchall()
-
-            if len(cursor_output) == 0:
-                return DatabaseOutput.NONE
-
-            result: list = []
-            for output in cursor_output:
-                result.append({"token": output[0], "email": output[1]})
-
-            cursor.close()
-
-            return result
 
         except Exception as ex:
             print(ex)
