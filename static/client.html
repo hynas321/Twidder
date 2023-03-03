@@ -2,147 +2,217 @@
     <head>
         <title>Twidder</title>
         <link rel="stylesheet" type="text/css" href="client.css">
+        <link rel="stylesheet" href="css/bootstrap.min.css">
         <script src="https://cdn.socket.io/4.6.0/socket.io.min.js" integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+" crossorigin="anonymous"></script>
+        <script src="js/bootstrap.min.js"></script>
         <script src="client.js"></script>
         <script id="welcomeview" type="text/view">
-        <div id="welcomeview-layout">
-            <img id="Bild" src="wimage.png"> 
-            <form id="sign-in" onsubmit="signIn(this); return false;">  <!-- generate sign-in and sign-out form -->  <!-- form need two attributes-->
-                <div><h3>Sign-In!</h3></div>
-                <div class="form-container">
-                    <label for="signInEmail" class="form-label">E-Mail</label> <input id="signInEmail" class="form-input" type="email" required>  <!--With the command "label it is possible to click on buttons. "for" in the label have to match the "id" in the input field. The connection is created.-->
-                    <label for="signInPassword" class="form-label">Password</label> <input id="signInPassword" class="form-input" type="password" required>  <!-- div means division -->
+            <div id="welcomeview-layout" class="container welcome-view">
+                <div class="col-6 mx-auto mt-3 sticky-top">
+                    <h6 id="welcome-view-status-message" class="alert alert-danger text-center d-none"><b>Status message</b></h6>
                 </div>
-                <div class="form-input-button">
-                    <input id="btn-sign-in" class="form-input" type="submit" value="Sign in"> 
+                <div class="row">
+                    <div class="col-12 col-lg-6 text-center">
+                        <img src="wimage.png" class="img-fluid aspect-ratio-4x3" style="max-width: auto; height: 100%; object-fit: contain;">
+                    </div>
+                    <div class="col-12 col-lg-6 rounded p-3 bg-light">
+                        <form id="sign-in" class="form-inline mt-3" onsubmit="signIn(this); return false;">
+                            <h3 class="text-primary"><b>Sign-In</b></h3>
+                            <div class="form-group mt-2">
+                                <label for="signInEmail">E-Mail</label>
+                                <input id="signInEmail" class="form-control" type="email" required>
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="signInPassword" class="control-label">Password</label>
+                                <input id="signInPassword" class="form-control" type="password" required>
+                            </div>
+                            <div class="form-group mt-2">
+                                <input id="btn-sign-in" class="btn btn-success" type="submit" value="Sign in"> 
+                                <input id="btn-recover-password" class="btn btn-danger" type="submit" onclick="displayRecoverPasswordView()" value="Forgot password" formnovalidate> 
+                            </div>
+                        </form>
+                        <form id="sign-up" class="form-group mt-3" onsubmit="signUp(this); return false;">
+                            <h3 class="text-primary"><b>Sign-Up</b></h3>
+                            <div class="form-group mt-2">
+                                <label for="firstName">First name</label>
+                                <input id="firstName" class="form-control" type="text" required> 
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="familyName">Family name</label>
+                                <input id="familyName" class="form-control" type="text" required>
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="gender">Gender</label>
+                                <select id="gender" class="form-control"> 
+                                    <option> Male </option>
+                                    <option> Female </option>
+                                    <option> Others </option>
+                                </select> 
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="city">City</label>
+                                <input id="city" class="form-control" type="text" required>
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="country">Country</label>
+                                <input id="country" class="form-control" type="text" required> 
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="signUpEmail">E-Mail</label>
+                                <input id="signUpEmail" class="form-control" type="email" required>
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="signUpPassword">Password</label>
+                                <input id="signUpPassword" class="form-control" type="password" required>
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="repeatedSignUpPassword">Repeat password</label>
+                                <input id="repeatedSignUpPassword" class="form-control" type="password" required>
+                            </div>
+                            <div class="form-group mt-2">
+                                <input id="btn-sign-up" class="btn btn-success" type="submit" value="Sign up">
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="form-input-button-left">
-                    <input id="btn-recover-password" class="form-input" type="submit" onclick="displayRecoverPasswordView()" value="Forgot password" formnovalidate> 
-                </div>
-            </form>
-            <form id="sign-up" onSubmit="signUp(this); return false;">
-                <div> <h3> Sign-Up! </h3></div>
-                <div class="form-container">
-                    <label for="firstName" class="form-label"> First name </label>  <input id="firstName" class="form-input" type="text" required> 
-                    <label for="familyName" class="form-label"> Family name </label> <input id="familyName" class="form-input" type="text" required>
-                    <label for="gender" class="form-label">Gender</label>
-                            <select id="gender"> 
-                                <option> Male </option>
-                                <option> Female </option>
-                                <option> Others </option>
-                            </select> 
-                    <label for="city" class="form-label"> City </label> <input id="city" class="form-input" type="text" required>
-                    <label for="country" class="form-label"> Country </label> <input id="country" class="form-input" type="text" required> 
-                    <label for="signUpEmail" class="form-label"> E-Mail </label> <input id="signUpEmail" class="form-input" type="email" required> 
-                    <label for="signUpPassword" class="form-label"> Password </label> <input id="signUpPassword" class="form-input" type="password" required>
-                    <label for="repeatedSignUpPassword" class="form-label"> Repeat password </label> <input id="repeatedSignUpPassword" class="form-input" type="password" required> 
-                </div>
-                <input id="btn-sign-up" class="form-input-button form-input" type="submit" value="Sign up"> 
-                <div id="status-message" class="error-message">Status message</div>
-            </form> 
-        </div>
+            </div>
         </script>
         <script id="profileview" type="text/view">
-            <div class="center-grid">
-				<div class="tab-buttons">
-				    <button id="btn-home-tab" class="tab-button" onclick="displayHomeTab(); setActiveButton('home-tab');">Home</button>
-				    <button id="btn-account-tab" class="tab-button" onclick="displayAccountTab(); setActiveButton('account-tab');">Account</button>
-				    <button id="btn-browse-tab" class="tab-button" onclick="displayBrowseTab(); setActiveButton('browse-tab');">Browse</button>
-				</div>
-                <div id="home-tab" class="tab">
-                    <div id="personal-info">
-                        <div class="center-text"> 
-                            <h1>Home tab</h1>
-                            <h2>Personal information</h2>
+        <div class="container">
+            <div class="row">
+                <div class="text-center">
+                    <img src="twidder-small-logo.png" class="img">
+                </div>
+                <div class="text-center">
+                    <button id="btn-home-tab" type="button" class="btn btn-primary" onclick="displayHomeTab(); setActiveButton('home-tab')">Home</button>
+                    <button id="btn-account-tab" type="button" class="btn btn-primary" onclick="displayAccountTab(); setActiveButton('account-tab')">Account</button>
+                    <button id="btn-browse-tab" type="button" class="btn btn-primary" onclick="displayBrowseTab(); setActiveButton('browse-tab')">Browse</button>
+                </div>
+            </div>
+            <div class="col-6 mx-auto mt-3 sticky-top">
+                <h6 id="profile-view-status-message" class="alert alert-danger text-center d-none"><b>Status message</b></h6>
+            </div>
+            <div id="home-tab" class="mt-3 d-none">
+                <div class="row">
+                    <div id="personal-info" class="col-12 col-lg-6 p-3 bg-white">
+                        <h4 class="alert alert-success text-center"><b>Your account</b></h4>
+                        <text><b>Email:</b></text>
+                        <p id="email-value" style="display: inline;">-</p><br>
+                        <text><b>Name:</b></text>
+                        <p id="firstname-value" style="display: inline;">-</p><br>
+                        <text><b>Family name:</b></text>
+                        <p id="familyname-value" style="display: inline;">-</p><br>
+                        <text><b>Gender:</b></text>
+                        <p id="gender-value" style="display: inline;">-</p><br>
+                        <text><b>City:</b></text>
+                        <p id="city-value" style="display: inline;">-</p><br>
+                        <text><b>Country:</b></text>
+                        <p id="country-value" style="display: inline;">-</p><br>
+                        <text><b>Current location:</b></text>
+                        <p id="current-location-value" style="display: inline;">-</p>
+                        <div class="text-center mt-3">
+                            <h4 class="alert alert-success mt-2"><b>Add a message to your wall</b></h4>
+                            <textarea id="text-area" class="message-input" placeholder="Enter your message here"></textArea><br>
+                            <button id="btn-post" class="btn btn-success mt-2" onclick="postMessageToUserWall();">Post a new message</button>
+                            <button id="btn-home-refresh" class="btn btn-warning mt-2" onclick="displayUserPostWall();">Refresh messages</button>
                         </div>
-                        <b>Email:</b><p id="email-value" class="fetched-info">-</p><br>
-                        <b>Name:</b><p id="firstname-value" class="fetched-info">-</p><br>
-                        <b>Family name:</b><p id="familyname-value" class="fetched-info">-</p><br>
-                        <b>Gender:</b><p id="gender-value" class="fetched-info">-</p><br>
-                        <b>City:</b><p id="city-value" class="fetched-info">-</p><br>
-                        <b>Country:</b><p id="country-value" class="fetched-info">-</p><br>
-                        <b>Current location:</b><p id="current-location-value" class="fetched-info">-</p><br>
                     </div>
-                    <div id="post-message" class="center-text">
-                        <h2>Post wall</h2>
-                        <textarea id="text-area"></textArea><br>
-                        <button id="btn-post" class="submit-button" onclick="postMessageToUserWall();">Post</button>
-                        <button id="btn-home-refresh" class="refresh-button" onclick="displayUserPostWall();">Refresh</button>
-                    </div>
-                    <div id="home-tab-status-message" class="error-message center-text">Status message</div>
-                    <div class="post-wall">
-                        <text id="post-wall"></text>
+                    <div id="messages" class="col-12 col-lg-6 p-3 bg-white">
+                        <h4 class="alert alert-success text-center"><b>Post wall</b></h4>
+                        <div id="post-wall" style="max-height: 550px; overflow-y: scroll;">
+                        </div>
                     </div>
                 </div>
-                <div id="account-tab" class="tab">
-                    <div class="center-text">
-                        <h1>Account tab</h1>
-                        <h2>Change password</h2>
-                    </div>
-                    <div class="center-text">
-                        <form id="change-password-form" onsubmit="changePassword(this); return false;">
-                            <div><label for="oldPassword">Old password</label><br/><input id="oldPassword" type="password" required></div>
-                            <div><label for="newPassword">New password</label><br/><input id="newPassword" type="password" required></div>
-                            <div><label for="repeatedNewPassword">Repeated new password</label><br/><input id="repeatedNewPassword" type="password" required></div>
-                            <input id="btn-change-password" type="submit" class="submit-button" value="Change">
-                        </form>
-                    </div>
-                    <div class="center-text">
-                        <h2>Sign out</h2>
-                        <button id="btn-sign-out" class="sign-out-button" onclick="signOut('Signed out successfully', true)" class="btn-tab">Sign out</button>
-                        <div id="account-tab-status-message" class="error-message">Status message</div>
+            </div>
+            <div id="account-tab" class="row mt-3 d-none">
+                <div class="col-5 mx-auto text-center">
+                    <h4 class="alert alert-success"><b>Change password</b></h4>
+                    <form id="change-password-form" onsubmit="changePassword(this); return false;">
+                        <div class="form-group mt-2 center-text">
+                            <label for="signInEmail"><b>Old password</b></label>
+                            <input id="oldPassword" type="password" class="form-control" required>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label for="newPassword"><b>New password</b></label>
+                            <input id="newPassword" type="password" class="form-control" required>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label for="repeatedNewPassword"><b>Repeated new password</b></label>
+                            <input id="repeatedNewPassword" type="password" class="form-control" required>
+                        </div>
+                        <div class="form-group mt-2">
+                            <input id="btn-change-password" type="submit" class="btn btn-success mt-2" value="Change">
+                        </div>
+                    </form>
+                    <div class="mx-auto">
+                        <h4 class="alert alert-success"><b>Sign out</b></h4>
+                        <button id="btn-sign-out" class="btn btn-danger mt-2" onclick="signOut('Signed out successfully', true)" class="btn-tab">Sign out</button>
                     </div>
                 </div>
-                <div id="browse-tab" class="tab">
-                    <div class="center-text">
-                        <h1>Browse tab</h1>
-                        <h2>Search user</h2>
+            </div>
+            <div id="browse-tab" class="mt-3 d-none">
+                <div class="row">
+                    <div class="col-6 mx-auto text-center">
                         <form id="browse-user-account" onsubmit="displaySearchedUserProfile(this); return false;">
-                            <div><label for="searchedEmail">Email</label><br/><input id="searchedEmail" type="email" required></div>
-                            <input id="btn-browse-messages" class="submit-button" type="submit" value="Search">
+                            <h4>Search for the user</h4>
+                            <input id="searchedEmail" class="form-control mb-2" type="email" placeholder="Enter their e-mail address" required>
+                            <input id="btn-browse-messages" class="btn btn-success" type="submit" value="Search">
                         </form>
                     </div>
-                    <div id="embedded-tab" class="embedded-tab">
-                        <div id="embedded-personal-info">
-                            <div id="searched-personal-info">
-                                <h2 class="center-text">Personal information</h2>
-                                <b>Email:</b><p id="searched-email-value" class="fetched-info">-</p><br>
-                                <b>Name:</b><p id="searched-firstname-value" class="fetched-info">-</p><br>
-                                <b>Family name:</b><p id="searched-familyname-value" class="fetched-info">-</p><br>
-                                <b>Gender:</b><p id="searched-gender-value" class="fetched-info">-</p><br>
-                                <b>City:</b><p id="searched-city-value" class="fetched-info">-</p><br>
-                                <b>Country:</b><p id="searched-country-value" class="fetched-info">-</p><br>
-                                <b>Current location:</b><p id="searched-current-location-value" class="fetched-info">-</p><br>
+                </div>
+                <div class="container">
+                    <div id="embedded-tab" class="row">
+                        <div id="personal-info" class="col-12 col-lg-6 p-3 mt-3 bg-white">
+                            <h4 class="alert alert-success text-center"><b>Searched user account</b></h4>
+                            <text><b>Email:</b></text>
+                            <p id="searched-email-value" style="display: inline;">-</p><br>
+                            <text><b>Name:</b></text>
+                            <p id="searched-firstname-value" style="display: inline;">-</p><br>
+                            <text><b>Family name:</b></text>
+                            <p id="searched-familyname-value" style="display: inline;">-</p><br>
+                            <text><b>Gender:</b></text>
+                            <p id="searched-gender-value" style="display: inline;">-</p><br>
+                            <text><b>City:</b></text>
+                            <p id="searched-city-value" style="display: inline;">-</p><br>
+                            <text><b>Country:</b></text>
+                            <p id="searched-country-value" style="display: inline;">-</p><br>
+                            <text><b>Current location:</b></text>
+                            <p id="searched-current-location-value" style="display: inline;">-</p>
+                            <div class="text-center mt-3">
+                                <h4 class="alert alert-success mt-2"><b>Add a message to the user's wall</b></h4>
+                                <textarea id="searched-text-area" class="message-input" placeholder="Enter your message here"></textArea><br>
+                                <button id="btn-searched-post" class="btn btn-success mt-2" onclick="postMessageToSearchedUserWall();">Post a new message</button>
+                                <button id="btn-browse-refresh" class="btn btn-warning mt-2" onclick="displaySearchedUserPostWall();">Refresh messages</button>
                             </div>
                         </div>
-                        <div id="searched-post-message" class="center-text">
-                            <h2>Post a new message</h2>
-                            <textarea id="searched-text-area"></textArea><br>
-                            <button id="btn-searched-post" class="submit-button" onclick="postMessageToSearchedUserWall();">Post</button>
-                            <button id="btn-browse-refresh" class="refresh-button" onclick="displaySearchedUserPostWall();">Refresh</button>
-                        </div>
-                        <div id="browse-tab-status-message" class="error-message center-text">Status message</div>
-                        <div class="post-wall">
-                            <div id="searched-post-wall"></div>
+                        <div id="messages" class="col-12 col-lg-6 mt-3 p-3 mt-3 bg-white">
+                            <h4 class="alert alert-success text-center"><b>Post wall</b></h4>
+                            <div id="searched-post-wall" style="max-height: 550px; overflow-y: scroll;">
+                            </div>
                         </div>
                     </div>
-                    <div id="browse-tab-bottom-status-message" class="error-message center-text">Status message</div>
                 </div>
-			</div>
+            </div>
+        </div>
         </script>
         <script id="recoverpasswordview" type="text/view">
-            <div class="center-grid">
-                <div class="center-text"> 
-                    <h1>Password recovery</h1>
-                    <h3>Enter your e-mail address to receive an URL that will allow you to set a new password</h2>
-                    <div>
+            <div class="container">
+                <div class="text-center">
+                    <img src="twidder-small-logo.png" class="img">
+                </div>
+                <div class="col-6 mx-auto mt-3 sticky-top">
+                    <h6 id="recover-password-view-status-message" class="alert alert-danger text-center d-none"><b>Status message</b></h6>
+                </div>
+                <div class="row">
+                    <div class="col-6 mx-auto mt-3 text-center">
+                        <h4 class="alert alert-success text-center"><b>Recover password</b></h4>
+                        <h4>Enter your e-mail address to receive an URL that will allow you to set a new password.</h2>
                         <form id="recover-password-form" onsubmit="recoverPassword(); return false;">
-                            <input id="recover-email" class="form-input" type="email" required>
-                            <input id="btn-recover-password" class="form-input" type="submit">
+                            <input id="recover-email" class="form-control mb-2" type="email" placeholder="Enter your email here" required>
+                            <input id="btn-recover-password" class="btn btn-success" type="submit">
                         </form>
+                        <button id="btn-go-back" class="btn btn-danger" onclick="displayWelcomeView();">Go back</button>
                     </div>
-                    <div id="recover-password-status-message" class="error-message center-text">Status message</div>
-                    <button id="btn-go-back" class="submit-button" onclick="displayWelcomeView();">Go back</button>
                 </div>
             </div>
         </script>

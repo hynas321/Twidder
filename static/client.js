@@ -2,9 +2,9 @@ const minPasswordLength = 6;
 var socket;
 var userDataRetrieved = false;
 
-const displayProperty = {
-    block: "block",
-    none: "none"
+const displayClass = {
+    block: "d-block",
+    none: "d-none"
 };
 
 const localStorageKey = {
@@ -75,26 +75,27 @@ var displayRecoverPasswordView = function() {
 
 var displayStatusMessage = function(statusMessageElement, statusMessage, success) {
 
-    if (statusMessageElement.style.display == displayProperty.block) {
-        statusMessageElement.style.display = displayProperty.none;
-    } 
-
     if (success) {
-        statusMessageElement.classList.replace("error-message", "success-message");
+        statusMessageElement.classList.replace("alert-danger", "alert-primary");
     }
     else {
-        statusMessageElement.classList.replace("success-message", "error-message");
+        statusMessageElement.classList.replace("alert-primary", "alert-danger");
     }
 
-    statusMessageElement.style.display = displayProperty.block;
+    statusMessageElement.classList.replace(displayClass.none, displayClass.block);
     statusMessageElement.textContent = statusMessage;
+
+
+    setTimeout(()=> {
+        statusMessageElement.classList.replace(displayClass.block, displayClass.none);
+    }, 4000)
 }
 
 //*** Account ***
 var signIn = function(signInFormData) {
     const emailString = signInFormData.signInEmail.value;
     const passwordString = signInFormData.signInPassword.value;
-    const statusMessageElement = document.getElementById("status-message");
+    const statusMessageElement = document.getElementById("welcome-view-status-message");
 
     if (!isPasswordLengthCorrect(passwordString)) {
         displayStatusMessage(
@@ -169,7 +170,7 @@ var signIn = function(signInFormData) {
 var signUp = function(signUpFormData) {
     const passwordString = signUpFormData.signUpPassword.value;
     const repeatedPasswordString = signUpFormData.repeatedSignUpPassword.value;
-    const statusMessageElement = document.getElementById("status-message");
+    const statusMessageElement = document.getElementById("welcome-view-status-message");
 
     if (!(passwordString == repeatedPasswordString)) {
         displayStatusMessage(
@@ -261,7 +262,7 @@ var changePassword = function(changePasswordFormData) {
     const oldPassword = changePasswordFormData.oldPassword.value;
     const newPassword = changePasswordFormData.newPassword.value; 
     const repeatedNewPassword = changePasswordFormData.repeatedNewPassword.value;
-    const accountTabStatusMessageElement = document.getElementById("account-tab-status-message");
+    const accountTabStatusMessageElement = document.getElementById("profile-view-status-message");
 
     if (!isPasswordLengthCorrect(oldPassword) ||
         !isPasswordLengthCorrect(newPassword) ||
@@ -361,7 +362,7 @@ var signOut = function(optionalMessage, optionalSuccess) {
 
             if (signOutRequest.status == 200) {
                 if (optionalMessage != undefined && optionalSuccess != undefined) {
-                    const statusMessageElement = document.getElementById("status-message");
+                    const statusMessageElement = document.getElementById("welcome-view-status-message");
 
                     displayStatusMessage(
                         statusMessageElement,
@@ -371,7 +372,7 @@ var signOut = function(optionalMessage, optionalSuccess) {
                 }
             }
             else if (signOutRequest.status == 401) {
-                const statusMessageElement = document.getElementById("status-message");
+                const statusMessageElement = document.getElementById("welcome-view-status-message");
 
                 displayStatusMessage(
                     statusMessageElement,
@@ -380,7 +381,7 @@ var signOut = function(optionalMessage, optionalSuccess) {
                 );
             }
             else if (signOutRequest.status == 500) {
-                const statusMessageElement = document.getElementById("status-message");
+                const statusMessageElement = document.getElementById("welcome-view-status-message");
 
                 displayStatusMessage(
                     statusMessageElement,
@@ -396,7 +397,7 @@ var signOut = function(optionalMessage, optionalSuccess) {
 //*** User Profile ***
 var displayUserProfile = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    const homeTabStatusMessageElement = document.getElementById("home-tab-status-message");
+    const homeTabStatusMessageElement = document.getElementById("profile-view-status-message");
     const getUserDataRequest = new XMLHttpRequest();
 
     if (userDataRetrieved) {
@@ -454,7 +455,7 @@ var displayUserProfile = function() {
     
 var displaySearchedUserProfile = function(browseFormDataObject) {
     const embeddedTab = document.getElementById("embedded-tab");
-    const bottomBrowseTabStatusMessageElement = document.getElementById("browse-tab-bottom-status-message");
+    const browseTabStatusMessageElement = document.getElementById("profile-view-status-message");
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const email = browseFormDataObject.searchedEmail.value;
     const getUserDataRequest = new XMLHttpRequest();
@@ -466,10 +467,6 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
         if (getUserDataRequest.readyState == 4) {
             if (getUserDataRequest.status == 200) {
                 const userData = JSON.parse(getUserDataRequest.response);
-
-                if (bottomBrowseTabStatusMessageElement.style.display == displayProperty.block) {
-                    bottomBrowseTabStatusMessageElement.style.display = displayProperty.none;
-                } 
                 
                 document.getElementById("searched-email-value").textContent = userData.data.email;
                 document.getElementById("searched-firstname-value").textContent = userData.data.firstname;
@@ -480,31 +477,33 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
                 document.getElementById("searched-current-location-value").textContent =
                     userData.data.current_location != null ? userData.data.current_location : "-";
             
-                embeddedTab.style.display = displayProperty.block;
+                embeddedTab.classList.replace(displayClass.none, displayClass.block);
                 
                 displaySearchedUserPostWall();
                 return;
             }
 
-            embeddedTab.style.display = displayProperty.none;
+            if (embeddedTab.classList.contains(displayClass.block)) {
+                embeddedTab.classList.replace(displayClass.block, displayClass.none);
+            }
 
             if (getUserDataRequest.status == 401) {
                 displayStatusMessage(
-                    bottomBrowseTabStatusMessageElement,
+                    browseTabStatusMessageElement,
                     "Authentication error, could not load user data",
                     false
                 );
             }
             else if (getUserDataRequest.status == 404) {
                 displayStatusMessage(
-                    bottomBrowseTabStatusMessageElement,
+                    browseTabStatusMessageElement,
                     "User not found",
                     false
                 );
             }
             else if (getUserDataRequest.status == 500) {
                 displayStatusMessage(
-                    bottomBrowseTabStatusMessageElement,
+                    browseTabStatusMessageElement,
                     "Unexpected error, could not load user data",
                     false
                 );
@@ -517,7 +516,7 @@ var displaySearchedUserProfile = function(browseFormDataObject) {
 //*** Post Wall ***
 var postMessageToUserWall = async function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    const homeTabStatusMessageElement = document.getElementById("home-tab-status-message");
+    const homeTabStatusMessageElement = document.getElementById("profile-view-status-message");
     const textArea = document.getElementById("text-area");
 
     const getUserDataRequest = new XMLHttpRequest();    
@@ -569,10 +568,6 @@ var postMessageToUserWall = async function() {
                     true
                 );
 
-                setTimeout(()=> {
-                    homeTabStatusMessageElement.style.display = displayProperty.none;
-                }, 3000)
-
                 textArea.value = "";
                 displayUserPostWall();
             }
@@ -589,10 +584,6 @@ var postMessageToUserWall = async function() {
                     "Message cannot be empty",
                     false
                 );
-
-                setTimeout(()=> {
-                    homeTabStatusMessageElement.style.display = displayProperty.none;
-                }, 3000)
             }
             else if (postMessageRequest.status == 404) {
                 displayStatusMessage(
@@ -616,7 +607,7 @@ var postMessageToUserWall = async function() {
 var postMessageToSearchedUserWall = async function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const textArea = document.getElementById("searched-text-area");
-    const browseTabStatusMessageElement = document.getElementById("browse-tab-status-message");
+    const browseTabStatusMessageElement = document.getElementById("profile-view-status-message");
     const email = document.getElementById("searchedEmail").value;
 
     const getUserDataRequest = new XMLHttpRequest();
@@ -661,10 +652,6 @@ var postMessageToSearchedUserWall = async function() {
                     true
                 );
 
-                setTimeout(()=> {
-                    browseTabStatusMessageElement.style.display = displayProperty.none;
-                }, 3000)
-
                 textArea.value = "";
                 displaySearchedUserPostWall();
             }
@@ -681,10 +668,6 @@ var postMessageToSearchedUserWall = async function() {
                     "Message cannot be empty",
                     false
                 );
-
-                setTimeout(()=> {
-                    browseTabStatusMessageElement.style.display = displayProperty.none;
-                }, 3000)
             }
             else if (postMessageRequest.status == 404) {
                 displayStatusMessage(
@@ -707,7 +690,7 @@ var postMessageToSearchedUserWall = async function() {
 
 var displayUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    const homeTabStatusMessageElement = document.getElementById("home-tab-status-message");
+    const homeTabStatusMessageElement = document.getElementById("profile-view-status-message");
     const postWall = document.getElementById("post-wall");
     
     const getUserMessagesRequest = new XMLHttpRequest();
@@ -723,14 +706,24 @@ var displayUserPostWall = function() {
                 postWall.innerHTML = "";
 
                 for (let i = response.messages.length - 1; i >= 0 ; i--) {
-                    if (response.messages[i].writer_location == undefined) {
+                    if (response.messages[i].writer_location != undefined) {
                         postWall.innerHTML +=
-                        `<br><b><div style="color:red">${response.messages[i].writer}</div></b></div>${response.messages[i].content}<br>`;
+                        `<div class="alert alert-warning mt-2">
+                            <text style="color: black">
+                                <text style="color: goldenrod"><b>User: ${response.messages[i].writer}</b></text><br>
+                                <text style="color: green"><b>Location: ${response.messages[i].writer_location}</b></text><br>
+                                <text>${response.messages[i].content}</text>
+                            </text>
+                         </div>`;
                     }
                     else {
                         postWall.innerHTML +=
-                        `<br><b><div style="color:red">${response.messages[i].writer}</div></b>
-                         <b><div style="color:green">${response.messages[i].writer_location}</b></div>${response.messages[i].content}<br>`;
+                        `<div class="alert alert-warning mt-2">
+                            <text style="color: black">
+                                <text style="color: goldenrod"><b>User: ${response.messages[i].writer}</b></text><br>
+                                <text>${response.messages[i].content}</text>
+                            </text>
+                         </div>`;
                     }
                 }
             }
@@ -763,7 +756,7 @@ var displayUserPostWall = function() {
 var displaySearchedUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const email = document.getElementById("searchedEmail").value;
-    const browseTabStatusMessageElement = document.getElementById("browse-tab-status-message");
+    const browseTabStatusMessageElement = document.getElementById("profile-view-status-message");
     const postWall = document.getElementById("searched-post-wall");
     const getUserMessagesRequest = new XMLHttpRequest();
 
@@ -778,14 +771,24 @@ var displaySearchedUserPostWall = function() {
                 postWall.innerHTML = "";
 
                 for (let i = response.messages.length - 1; i >= 0 ; i--) {
-                    if (response.messages[i].writer_location == undefined) {
+                    if (response.messages[i].writer_location != undefined) {
                         postWall.innerHTML +=
-                        `<br><b><div style="color:red">${response.messages[i].writer}</div></b></div>${response.messages[i].content}<br>`;
+                        `<div class="alert alert-warning mt-2">
+                            <text style="color: black">
+                                <text style="color: goldenrod"><b>User: ${response.messages[i].writer}</b></text><br>
+                                <text style="color: green"><b>Location: ${response.messages[i].writer_location}</b></text><br>
+                                <text>${response.messages[i].content}</text>
+                            </text>
+                         </div>`;
                     }
                     else {
                         postWall.innerHTML +=
-                        `<br><b><div style="color:red">${response.messages[i].writer}</div>
-                         <b><div style="color:green">${response.messages[i].writer_location}</b></div>${response.messages[i].content}<br>`;
+                        `<div class="alert alert-warning mt-2">
+                            <text style="color: black">
+                                <text style="color: goldenrod"><b>User: ${response.messages[i].writer}</b></text><br>
+                                <text>${response.messages[i].content}</text>
+                            </text>
+                         </div>`;
                     }
                 }
                 return;
@@ -827,7 +830,7 @@ var displayHomeTab = function() {
     setActiveButton(tabs.home);
     setLocalStorageValue(localStorageKey.lastOpenedTab, tabs.home);
 
-    homeTab.style.display = displayProperty.block;
+    homeTab.classList.replace(displayClass.none, displayClass.block);
 
     displayUserProfile();
 }
@@ -839,7 +842,7 @@ var displayAccountTab = function() {
     setActiveButton(tabs.account);
     setLocalStorageValue(localStorageKey.lastOpenedTab, tabs.account);
 
-    accountTab.style.display = displayProperty.block;
+    accountTab.classList.replace(displayClass.none, displayClass.block);
 }
     
 var displayBrowseTab = function() {
@@ -849,28 +852,28 @@ var displayBrowseTab = function() {
     setActiveButton(tabs.browse);
     setLocalStorageValue(localStorageKey.lastOpenedTab, tabs.browse);
 
-    browseTab.style.display = displayProperty.block;
+    browseTab.classList.replace(displayClass.none, displayClass.block);
 }
     
 var clearTabs = function() {
     const homeTab = document.getElementById("home-tab");
 
-    if (homeTab.style.display == displayProperty.block) {
-        homeTab.style.display = displayProperty.none;
+    if (homeTab.classList.contains(displayClass.block)) {
+        homeTab.classList.replace(displayClass.block, displayClass.none);
         return;
     }
 
     const accountTab = document.getElementById("account-tab");
 
-    if (accountTab.style.display == displayProperty.block) {
-        accountTab.style.display = displayProperty.none;
+    if (accountTab.classList.contains(displayClass.block)) {
+        accountTab.classList.replace(displayClass.block, displayClass.none);;
         return;
     }
 
     const browseTab = document.getElementById("browse-tab");
 
-    if (browseTab.style.display == displayProperty.block) {
-        browseTab.style.display = displayProperty.none;
+    if (browseTab.classList.contains(displayClass.block)) {
+        browseTab.classList.replace(displayClass.block, displayClass.none);;
         return;
     }
 }
@@ -879,24 +882,24 @@ var setActiveButton = function(tabName) {
     const homeButton = document.getElementById("btn-home-tab");
     const accountButton = document.getElementById("btn-account-tab");
     const browseButton = document.getElementById("btn-browse-tab");
-    const blueColor = "#22c0f4";
-    const limeColor = "#53e058";
+    const primaryColor = "btn-primary";
+    const successColor = "btn-success";
 
-    homeButton.style.backgroundColor = blueColor;
-    accountButton.style.backgroundColor = blueColor;
-    browseButton.style.backgroundColor = blueColor;
+    homeButton.classList.replace(successColor, primaryColor);
+    accountButton.classList.replace(successColor, primaryColor);
+    browseButton.classList.replace(successColor, primaryColor);
 
     if (tabName == tabs.home) {
-        homeButton.style.backgroundColor = limeColor;
+        homeButton.classList.replace(primaryColor, successColor);
     }
     else if (tabName == tabs.account) {
-        accountButton.style.backgroundColor = limeColor;
+        accountButton.classList.replace(primaryColor, successColor);
     }
     else if (tabName == tabs.browse) {
-        browseButton.style.backgroundColor = limeColor;
+        browseButton.classList.replace(primaryColor, successColor);
     }
     else {
-        homeButton.style.backgroundColor = limeColor;
+        homeButton.classList.replace(primaryColor, successColor);
     }
 }
 
@@ -928,7 +931,7 @@ var manageSocket = function() {
 
 var recoverPassword = function() {
     const recoverEmail = document.getElementById("recover-email")
-    const recoverPasswordStatusMessage = document.getElementById("recover-password-status-message")
+    const recoverPasswordStatusMessage = document.getElementById("recover-password-view-status-message")
 
     displayStatusMessage(
         recoverPasswordStatusMessage,
