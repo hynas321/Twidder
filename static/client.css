@@ -9,18 +9,12 @@
     overflow-y: auto;
 }
 
-.info-p {
+.p-info {
     display: inline;
 }
 
 .profile-view-tab {
     display: none;
-}
-
-.welcome-view-image {
-    max-width: auto;
-    height: 100%;
-    object-fit: contain;
 }
 
 html {
