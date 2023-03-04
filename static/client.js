@@ -355,14 +355,14 @@ var changePassword = function(changePasswordFormData) {
     changePasswordRequest.send(JSON.stringify(passwords));
 }
 
-var signOut = function(closeSocketConnection) {
+var signOut = function(closeSocketConnection, successMessage) {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const userEmail = this.localStorage.getItem(localStorageKey.userEmail);
-    const statusMessageElement = document.getElementById(statusMessageName.welcomeView);
+    
+    removeCurrentUserLocation();
 
     if (closeSocketConnection == true) {
         socket.emit("disconnect-user", {"token": tokenValue, "email": userEmail});
-        removeCurrentUserLocation();
     }
 
     const signOutRequest = new XMLHttpRequest();
@@ -374,10 +374,12 @@ var signOut = function(closeSocketConnection) {
             clearLocalStorage();
             displayWelcomeView();
 
+            const statusMessageElement = document.getElementById(statusMessageName.welcomeView);
+
             if (signOutRequest.status == 200) {
                 displayStatusMessage(
                     statusMessageElement,
-                    "Signed out successfully",
+                    successMessage,
                     true
                 );
             }
@@ -884,14 +886,7 @@ var manageSocket = function(email) {
     socket = io.connect('http://localhost:5000');
 
     socket.on('close-connection', function(msg) {
-        const welcomeViewStatusMessage = document.getElementById(statusMessageName.welcomeView);
-
-        signOut(false);
-        displayStatusMessage(
-            welcomeViewStatusMessage,
-            msg.message,
-            false
-        );
+        signOut(false, msg.message);
     });
 
     socket.on('acknowledge-connection', function() {
