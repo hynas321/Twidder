@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.service import Service
+from selenium.webdriver.common.keys import Keys
 import unittest
 import time
 
@@ -13,17 +14,18 @@ class SeleniumTests(unittest.TestCase):
         self.webdriver = webdriver.Edge(service=self.service)
         self.webdriver.get(self.source)
 
-    #Test 1
+    #Test 1 - Welcome view
     def test_webpage_title(self):
         print("Running Test 1")
         self.assertEqual(self.webdriver.title, "Twidder")
-        time.sleep(4)
+        time.sleep(3)
 
     #Test 2 - Welcome view
     def test_sign_up_different_passwords(self):
         print("Running Test 2")
         test_user = TestUser()
 
+        time.sleep(2)
         self.webdriver.find_element(By.ID, "firstName").send_keys(test_user.first_name)
         self.webdriver.find_element(By.ID, "familyName").send_keys(test_user.family_name)
         self.webdriver.find_element(By.ID, "gender").send_keys(test_user.gender)
@@ -32,11 +34,12 @@ class SeleniumTests(unittest.TestCase):
         self.webdriver.find_element(By.ID, "signUpEmail").send_keys(test_user.email)
         self.webdriver.find_element(By.ID, "signUpPassword").send_keys(test_user.password)
         self.webdriver.find_element(By.ID, "repeatedSignUpPassword").send_keys("gibberish")
+        self.webdriver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
         self.webdriver.find_element(By.ID, "btn-sign-up").click()
-
         time.sleep(4)
 
-        status_error_message_text = self.webdriver.find_element(By.ID, "status-message").text
+        status_error_message_text = self.webdriver.find_element(By.ID, "welcome-view-status-message").text
         self.assertEqual(status_error_message_text, "Password and the repeated password are not the same")
 
     #Test 3 - Welcome view
@@ -46,11 +49,11 @@ class SeleniumTests(unittest.TestCase):
 
         self.webdriver.find_element(By.ID, "signInEmail").send_keys(test_user.email)
         self.webdriver.find_element(By.ID, "signInPassword").send_keys("abc")
+        time.sleep(2)
         self.webdriver.find_element(By.ID, "btn-sign-in").click()
-
         time.sleep(4)
 
-        status_error_message_text = self.webdriver.find_element(By.ID, "status-message").text
+        status_error_message_text = self.webdriver.find_element(By.ID, "welcome-view-status-message").text
         self.assertEqual(status_error_message_text, "Incorrect password length, allowed min length = 6")
 
     #Test 4 - Home tab
@@ -86,11 +89,12 @@ class SeleniumTests(unittest.TestCase):
         self.webdriver.find_element(By.ID, "oldPassword").send_keys("gibberish")
         self.webdriver.find_element(By.ID, "newPassword").send_keys("abcdefghijk")
         self.webdriver.find_element(By.ID, "repeatedNewPassword").send_keys("abcdefghijk")
-        self.webdriver.find_element(By.ID, "btn-change-password").click()
 
+        time.sleep(2)
+        self.webdriver.find_element(By.ID, "btn-change-password").click()
         time.sleep(4)
 
-        status_error_message_text = self.webdriver.find_element(By.ID, "account-tab-status-message").text
+        status_error_message_text = self.webdriver.find_element(By.ID, "profile-view-status-message").text
         self.assertEqual(status_error_message_text, "Incorrect password input(s): incorrect old password or the new password is the same as the old")
 
         self.__sign_out()
@@ -102,25 +106,28 @@ class SeleniumTests(unittest.TestCase):
 
         self.webdriver.find_element(By.ID, "btn-browse-tab").click()
         self.webdriver.find_element(By.ID, "searchedEmail").send_keys("gibberish@gibberish.gibberish")
-        self.webdriver.find_element(By.ID, "btn-browse-messages").click()
 
+        time.sleep(2)
+        self.webdriver.find_element(By.ID, "btn-browse-messages").click()
         time.sleep(4)
         
-        status_error_message_text = self.webdriver.find_element(By.ID, "browse-tab-bottom-status-message").text
+        status_error_message_text = self.webdriver.find_element(By.ID, "profile-view-status-message").text
         self.assertEqual(status_error_message_text, "User not found")
+
+        self.__sign_out()
 
     def __sign_in(self):
         test_user = TestUser()
 
         self.webdriver.find_element(By.ID, "signInEmail").send_keys(test_user.email)
         self.webdriver.find_element(By.ID, "signInPassword").send_keys(test_user.password)
-        self.webdriver.find_element(By.ID, "btn-sign-in").click()
 
+        time.sleep(2)
+        self.webdriver.find_element(By.ID, "btn-sign-in").click()
         time.sleep(3)
 
     def __sign_out(self):
-        time.sleep(3)
-
+        time.sleep(2)
         self.webdriver.find_element(By.ID, "btn-account-tab").click()
         self.webdriver.find_element(By.ID, "btn-sign-out").click()
 
