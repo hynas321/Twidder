@@ -11,10 +11,8 @@ CREATE TABLE IF NOT EXISTS User(
 )
 
 CREATE TABLE IF NOT EXISTS LoggedInUser(
-    id INTEGER,
-    token VARCHAR(60),
-    email VARCHAR(60),
-    PRIMARY KEY(id)
+    token VARCHAR(60) PRIMARY KEY,
+    email VARCHAR(60)
 )
 
 CREATE TABLE IF NOT EXISTS Message(

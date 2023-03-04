@@ -180,15 +180,13 @@ class UserDAO:
 class LoggedInUserDAO:
     def create_logged_in_user(self, logged_in_user: LoggedInUser) -> bool:
         try:
-            get_db().execute("INSERT INTO LoggedInUser VALUES (?, ?, ?)",
+            get_db().execute("INSERT INTO LoggedInUser VALUES (?, ?)",
                 [
-                    None,
                     logged_in_user.token,
                     logged_in_user.email
                 ]
             )
             get_db().commit()
-
             return True
 
         except Exception as ex:

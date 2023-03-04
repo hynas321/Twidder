@@ -33,7 +33,7 @@ window.onload = function() {
     }
     else {
         manageSocket(userEmail);
-        displayProfileView();
+        displayProfileView()
     }
 };
 
@@ -42,6 +42,7 @@ window.addEventListener("beforeunload", function (e) {
         const tokenValue = localStorage.getItem(localStorageKey.token);
         const userEmail = this.localStorage.getItem(localStorageKey.userEmail);
         socket.emit("disconnect-user", {"token": tokenValue, "email": userEmail});
+        removeCurrentUserLocation();
     }
 });
 
@@ -360,8 +361,8 @@ var signOut = function(closeSocketConnection) {
     const statusMessageElement = document.getElementById(statusMessageName.welcomeView);
 
     if (closeSocketConnection == true) {
-
         socket.emit("disconnect-user", {"token": tokenValue, "email": userEmail});
+        removeCurrentUserLocation();
     }
 
     const signOutRequest = new XMLHttpRequest();
@@ -400,10 +401,12 @@ var signOut = function(closeSocketConnection) {
 }
 
 //*** User Profile ***
-var displayUserProfile = function() {
+var displayUserProfile = async function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
-    
+
+    await setCurrentUserLocation();
+
     const getUserDataRequest = new XMLHttpRequest();
     getUserDataRequest.open("GET", "/get-user-data-by-token", true);
     getUserDataRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -685,7 +688,6 @@ var postMessageToSearchedUserWall = async function() {
 
 var displayUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
-    const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
     const postWall = document.getElementById("post-wall");
     
     const getUserMessagesRequest = new XMLHttpRequest();
@@ -720,27 +722,19 @@ var displayUserPostWall = function() {
                          </div>`;
                     }
                 }
+                return;
             }
-            else if (getUserMessagesRequest.status == 401) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "Authentication error - messages could not be displayed",
-                    false
-                );
+
+            postWall.innerHTML = "";
+
+            if (getUserMessagesRequest.status == 401) {
+                postWall.innerHTML = '<h5 class="text-center">Authentication error - messages could not be displayed</h5>'
             }
             else if (getUserMessagesRequest.status == 404) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "No messages to display",
-                    true
-                );
+                postWall.innerHTML = '<h5 class="text-center">No messages to display :(</h5>'
             }
             else if (getUserMessagesRequest.status == 500) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "Unexpected error - messages could not be displayed",
-                    true
-                );
+                postWall.innerHTML = '<h5 class="text-center">Unexpected error - messages could not be displayed</h5>'
             }
         }
     }
@@ -750,7 +744,6 @@ var displayUserPostWall = function() {
 var displaySearchedUserPostWall = function() {
     const tokenValue = localStorage.getItem(localStorageKey.token);
     const email = document.getElementById("searchedEmail").value;
-    const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
     const postWall = document.getElementById("searched-post-wall");
 
     const getUserMessagesRequest = new XMLHttpRequest();
@@ -791,25 +784,13 @@ var displaySearchedUserPostWall = function() {
             postWall.innerHTML = "";
 
             if (getUserMessagesRequest.status == 401) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "Authentication error - messages could not be displayed",
-                    false
-                );
+                postWall.innerHTML = '<h5 class="text-center">Authentication error - messages could not be displayed</h5>'
             }
             else if (getUserMessagesRequest.status == 404) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "No messages to display",
-                    true
-                );
+                postWall.innerHTML = '<h5 class="text-center">No messages to display :(</h5>'
             }
             else if (getUserMessagesRequest.status == 500) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "Unexpected error - messages could not be displayed",
-                    true
-                );
+                postWall.innerHTML = '<h5 class="text-center">Unexpected error - messages could not be displayed</h5>'
             }
         }
     }
@@ -985,7 +966,7 @@ var setCurrentUserLocation = async function() {
         }
     
         const setUserCurrentLocationRequest = new XMLHttpRequest();
-        setUserCurrentLocationRequest.open("POST", "/set-user-location", true);
+        setUserCurrentLocationRequest.open("PUT", "/set-user-current-location", true);
         setUserCurrentLocationRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         setUserCurrentLocationRequest.setRequestHeader("token", tokenValue);
         if (setUserCurrentLocationRequest.readyState == 4) {
@@ -1028,4 +1009,14 @@ var setCurrentUserLocation = async function() {
         setUserCurrentLocationRequest.send(JSON.stringify(coords));
     }
     catch(error) {}
+}
+
+var removeCurrentUserLocation = function() {
+    const tokenValue = localStorage.getItem(localStorageKey.token);
+
+    const removeCurrentUserLocationRequest = new XMLHttpRequest();
+    removeCurrentUserLocationRequest.open("DELETE", "/remove-user-current-location", true);
+    removeCurrentUserLocationRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    removeCurrentUserLocationRequest.setRequestHeader("token", tokenValue);
+    removeCurrentUserLocationRequest.send();
 }

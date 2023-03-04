@@ -392,8 +392,8 @@ def recover_password_via_email(email: str):
 
     return "", 200
 
-@app.route("/set-user-location", methods=["POST"])
-def set_user_location():
+@app.route("/set-user-current-location", methods=["PUT"])
+def set_user_current_location():
     received_token = request.headers.get("token")
     received_json = request.get_json()
 
@@ -441,6 +441,25 @@ def set_user_location():
     if not is_current_location_changed:
         return "", 500
     
+    return "", 200
+
+@app.route("/remove-user-current-location", methods=["DELETE"])
+def remove_user_current_location():
+    received_token = request.headers.get("token")
+
+    token_manager = db_helper.TokenManager()
+    is_token_correct = token_manager.verify_token(received_token)
+
+    if received_token is None or not is_token_correct:
+        return "", 401
+    
+    user_DAO = db_helper.UserDAO()
+    
+    is_user_current_location_changed = user_DAO.change_user_current_location(received_token, None)
+
+    if not is_user_current_location_changed:
+        return "", 500
+
     return "", 200
     
 if __name__ == "__main__":
