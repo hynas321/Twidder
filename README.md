@@ -19,11 +19,10 @@
 3. Use the command `python test.py` in the command line
 
 ## Tasks implemented:
-+ Use of HTML5 for Drag and Drop [1 point]
 + Testing Using Selenium [2 points]
 + Styling and Responsive Design [2 points]
 + Geolocation [2 points]
 + Recover Your Password [2 points]
 + Bonus: Status Codes [2 points]
 
-Total: 11 points
+Total: 10 points

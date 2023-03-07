@@ -977,20 +977,3 @@ var removeCurrentUserLocation = function() {
     removeCurrentUserLocationRequest.setRequestHeader("token", tokenValue);
     removeCurrentUserLocationRequest.send();
 }
-
-//*** Drag & drop ***
-var allowDrop = function(ev) {
-    ev.preventDefault();
-}
-
-var drag = function(ev) { 
-    ev.dataTransfer.setData("text", ev.target.id);
-}
-
-var drop = function(ev) {
-    ev.preventDefault();
-
-    const data = ev.dataTransfer.getData("text");
-
-    ev.target.appendChild(document.getElementById(data));
-}
