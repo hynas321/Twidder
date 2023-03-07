@@ -941,13 +941,12 @@ var recoverPassword = function() {
 var setCurrentUserLocation = async function() {
     try {
         const tokenValue = localStorage.getItem(localStorageKey.token);
-        const profileViewStatusMessage = document.getElementById(statusMessageName.profileView);
 
         const position = await new Promise((resolve, reject) => {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(resolve, reject);
             } else {
-                reject({latitude: undefined, longitude: undefined});
+                reject({latitude: null, longitude: null});
             }
         });
 
@@ -956,7 +955,7 @@ var setCurrentUserLocation = async function() {
             longitude: position.coords.longitude
         }
     
-        if (coords.latitude == undefined || coords.longitude == undefined) {
+        if (coords.latitude == null || coords.longitude == null) {
             return;
         }
     
@@ -964,43 +963,6 @@ var setCurrentUserLocation = async function() {
         setUserCurrentLocationRequest.open("PUT", "/set-user-current-location", true);
         setUserCurrentLocationRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
         setUserCurrentLocationRequest.setRequestHeader("token", tokenValue);
-        if (setUserCurrentLocationRequest.readyState == 4) {
-            if (setUserCurrentLocationRequest.status == 200) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "Location set successfully",
-                    true
-                );
-            }
-            else if (setUserCurrentLocationRequest.status == 400) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "Incorrect coordinates, location not set",
-                    true
-                );
-            }
-            else if (setUserCurrentLocationRequest.status == 401) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "Authentication error, location not set",
-                    true
-                );
-            }
-            else if (setUserCurrentLocationRequest.status == 404) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "User not found, location not set",
-                    true
-                );
-            }
-            else if (setUserCurrentLocationRequest.status == 404) {
-                displayStatusMessage(
-                    profileViewStatusMessage,
-                    "Unexpected error, location not set",
-                    true
-                );
-            }
-        }
         setUserCurrentLocationRequest.send(JSON.stringify(coords));
     }
     catch(error) {}
@@ -1014,4 +976,21 @@ var removeCurrentUserLocation = function() {
     removeCurrentUserLocationRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     removeCurrentUserLocationRequest.setRequestHeader("token", tokenValue);
     removeCurrentUserLocationRequest.send();
+}
+
+//*** Drag & drop ***
+var allowDrop = function(ev) {
+    ev.preventDefault();
+}
+
+var drag = function(ev) { 
+    ev.dataTransfer.setData("text", ev.target.id);
+}
+
+var drop = function(ev) {
+    ev.preventDefault();
+
+    const data = ev.dataTransfer.getData("text");
+
+    ev.target.appendChild(document.getElementById(data));
 }
