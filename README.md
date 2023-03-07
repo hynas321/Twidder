@@ -14,10 +14,10 @@
 2. Type `http://127.0.0.1:5000/static/client.html` URL in the browser
 
 ## Tasks implemented:
-Use of HTML5 for Drag and Drop [1 point]
-Testing Using Selenium [2 points]
-Styling and Responsive Design [2 points]
-Geolocation [2 points]
-Recover Your Password [2 points]
-Status Codes [2 points]
++ Use of HTML5 for Drag and Drop [1 point]
++ Testing Using Selenium [2 points]
++ Styling and Responsive Design [2 points]
++ Geolocation [2 points]
++ Recover Your Password [2 points]
++ Status Codes [2 points]
 **Total points: 11**
