@@ -13,11 +13,17 @@
 1. Run the server in the command line (for Windows: `python server.py`)
 2. Type `http://127.0.0.1:5000/static/client.html` URL in the browser
 
+## Selenium tests - how to configure and run them
+1. Download Microsoft Edge WebDriver https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/
+2. Set it in the same location as `test.py`
+3. Use the command `python test.py` in the command line
+
 ## Tasks implemented:
 + Use of HTML5 for Drag and Drop [1 point]
 + Testing Using Selenium [2 points]
 + Styling and Responsive Design [2 points]
 + Geolocation [2 points]
 + Recover Your Password [2 points]
-+ Status Codes [2 points]
-**Total points: 11**
++ Bonus: Status Codes [2 points]
+
+Total: 11 points

@@ -4,7 +4,8 @@ from selenium.webdriver.edge.service import Service
 import unittest
 import time
 
-#Tests require to have a TestUser created in a database
+#Tests require to have a TestUser created in a database.
+#In order to run the tests, msedgedriver.exe needs to be in the same folder as test.py.
 class SeleniumTests(unittest.TestCase):
     def setUp(self):
         self.source = "http://127.0.0.1:5000/static/client.html"
