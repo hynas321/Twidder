@@ -6,6 +6,8 @@ from enum import Enum
 
 DATABASE_URI = "database.db"
 
+#get_db() - connects to the database if the connection was not made before
+#or accesses the database.
 def get_db():
     db = getattr(g, 'db', None)
 
@@ -14,6 +16,7 @@ def get_db():
 
     return db
 
+#disconnect() - disconnect the database connection if such a connection exists.
 def disconnect():
     db = getattr(g, 'db', None)
 
@@ -21,6 +24,7 @@ def disconnect():
         g.db.close()
         g.db = None
 
+#Class User represents table User in schema.sql.
 class User:
     def __init__(
         self, 
@@ -42,11 +46,13 @@ class User:
         self.country = country
         self.current_location = current_location
 
+#Class LoggedInUser represents table LoggedInUser in schema.sql.
 class LoggedInUser:
     def __init__(self, token: str, email: str):
         self.token = token
         self.email = email
 
+#Class Message represents table Message in schema.sql.
 class Message:
     def __init__(self, email: str, writer: str, content: str, writer_location: str):
         self.email = email
@@ -54,7 +60,11 @@ class Message:
         self.content = content
         self.writer_location = writer_location
 
+#Class UserDAO has access to the User table and its data.
 class UserDAO:
+    #create_user() creates a new user in the database.
+    #Arguments: User object.
+    #Returns: boolean.
     def create_user(self, user: User) -> bool:
         try:
             get_db().execute("INSERT INTO User VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -78,6 +88,9 @@ class UserDAO:
 
             return False
 
+    #get_user_data_by_email() gets user data from the database by email.
+    #Arguments: email string.
+    #Returns: DatabaseOutput Enum (NONE, ERROR) or User object.
     def get_user_data_by_email(self, email: str):
         try:
             cursor = get_db().cursor()
@@ -107,6 +120,9 @@ class UserDAO:
 
             return DatabaseOutput.ERROR
 
+    #get_user_data_by_token() gets user data from the database by token.
+    #Arguments: token string.
+    #Returns: DatabaseOutput Enum (NONE, ERROR) or User object.
     def get_user_data_by_token(self, token: str):
         try:
             cursor = get_db().cursor()
@@ -146,6 +162,9 @@ class UserDAO:
 
             return DatabaseOutput.ERROR
 
+    #change_user_password() changes user's password in the database.
+    #Arguments: email and new_password strings.
+    #Returns: boolean.
     def change_user_password(self, email: str, new_password: str) -> bool:
         try:
             get_db().execute("UPDATE User SET password = ? WHERE email = ?", [new_password, email])
@@ -157,7 +176,10 @@ class UserDAO:
             print(ex)
 
             return False
-        
+    
+    #change_user_current_location() changes user's current location in the database.
+    #Arguments: token and current_location strings.
+    #Returns: boolean.
     def change_user_current_location(self, token: str, current_location: str) -> bool:
         try:
             user_dao = UserDAO()
@@ -176,8 +198,12 @@ class UserDAO:
             print(ex)
 
             return False
-        
+
+#Class LoggedInUserDAO has access to the LoggedInUser table and its data.
 class LoggedInUserDAO:
+    #create_logged_in_user() - creates a new logged in user.
+    #Arguments: LoggedInUser object.
+    #Returns: boolean.
     def create_logged_in_user(self, logged_in_user: LoggedInUser) -> bool:
         try:
             get_db().execute("INSERT INTO LoggedInUser VALUES (?, ?)",
@@ -194,6 +220,9 @@ class LoggedInUserDAO:
 
             return False
 
+    #delete_logged_in_user_by_token() - deletes user from the database by token.
+    #Arguments: token string.
+    #Returns: boolean.
     def delete_logged_in_user_by_token(self, token: str) -> bool:
         try:
             get_db().execute("DELETE FROM LoggedInUser WHERE token = ?", [token])
@@ -206,6 +235,9 @@ class LoggedInUserDAO:
 
             return False
 
+    #delete_logged_in_user_by_email() - deletes user from the database by email.
+    #Arguments: email string.
+    #Returns: boolean.
     def delete_logged_in_user_by_email(self, email: str) -> bool:
         try:
             get_db().execute("DELETE FROM LoggedInUser WHERE email = ?", [email])
@@ -218,6 +250,9 @@ class LoggedInUserDAO:
 
             return False
 
+    #get_logged_in_user_by_token() - gets logged in user by token from the database.
+    #Arguments: token string.
+    #Returns: DatabaseOutput Enum (NONE, ERROR) or LoggedInUser object.
     def get_logged_in_user_by_token(self, token: str):
         try:
             cursor = get_db().cursor()
@@ -242,6 +277,9 @@ class LoggedInUserDAO:
 
             return DatabaseOutput.ERROR
 
+    #get_logged_in_user_by_email() - gets logged in user by email from the database.
+    #Arguments: email string.
+    #Returns: DatabaseOutput Enum (NONE, ERROR) or LoggedInUser object.
     def get_logged_in_user_by_email(self, email: str):
         try:
             cursor = get_db().cursor()
@@ -265,7 +303,11 @@ class LoggedInUserDAO:
 
             return DatabaseOutput.ERROR
 
+#Class MessageDAO has access to the Message table and its data.
 class MessageDao:
+    #add_message() - adds a new message to the database.
+    #Arguments: token, content, email, writer_location strings.
+    #Returns: DatabaseOutput Enum (NONE, ERROR) or boolean.
     def add_message(self, token: str, content: str, email: str, writer_location: str) -> bool:
         try:
             user_dao = UserDAO()
@@ -300,6 +342,9 @@ class MessageDao:
 
             return False
     
+    #get_user_messages_by_token() - gets user messages by token from the database.
+    #Arguments: token string.
+    #Returns: DatabaseOutput Enum (NONE, ERROR) or list.
     def get_user_messages_by_token(self, token: str):
         try:
             logged_in_user_DAO = LoggedInUserDAO()
@@ -331,6 +376,9 @@ class MessageDao:
 
             return DatabaseOutput.ERROR
 
+    #get_user_messages_by_email() - gets user messages by email from the database.
+    #Arguments: email string.
+    #Returns: DatabaseOutput Enum (NONE, ERROR) or list.
     def get_user_messages_by_email(self, email: str):
         try:
             cursor = get_db().cursor()
@@ -360,11 +408,16 @@ class MessageDao:
             print(ex)
 
             return DatabaseOutput.ERROR
-        
+
+#Class TokenManager handles token generation and verification.
 class TokenManager:
+    #generate_token() - generates token using hexadecimal notation.
+    #Returns: boolean.
     def generate_token(self) -> str:
         return uuid.uuid4().hex
 
+    #verify_token() - verifies token by checking if the logged in user with such a token exists.
+    #Returns: boolean.
     def verify_token(self, token: str) -> bool:
         logged_in_user_DAO = LoggedInUserDAO()
         logged_in_user = logged_in_user_DAO.get_logged_in_user_by_token(token)
@@ -374,24 +427,39 @@ class TokenManager:
         
         return True
 
+#Class InputManager handles string verification.
 class InputManager:
+    #verify_credentials() - verifies email format and password length.
+    #Arguments: email, password strings.
+    #Returns: boolean.
     def verify_credentials(self, email, password) -> bool:
         return self.verify_email_format(email) and self.verify_password_length(password)
 
+    #verify_email_format() - verifies email format by regular expressions.
+    #Arguments: email string.
+    #Returns: boolean.
     def verify_email_format(self, email) -> bool:
         email_format = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
         return re.match(email_format, email) is not None
     
+    #verify_password_length() - verifies password length.
+    #Arguments: password string.
+    #Returns: boolean.
     def verify_password_length(self, password) -> bool:
         min_password_length = 6
 
         return len(password) >= min_password_length
 
+    #verify_string_not_empty() - checks if the string is not empty.
+    #Arguments: string
+    #Returns: boolean.
     def verify_string_not_empty(self, string) -> bool:
         return len(string.strip()) != 0
 
+#Enum DatabaseOutput has two values: 
+#NONE - when nothing is returned from the database,
+#ERROR - when the exception is raised while accessing the database.
 class DatabaseOutput(Enum):
     NONE = 1,
     ERROR = 2,
-
