@@ -209,6 +209,7 @@ def sign_out():
     return "", 200
 
 #change_password() - changes the user's password.
+
 #Returns: empty string, the HTTP status code.
 @app.route("/change-password", methods=["PUT"])
 def change_password():
@@ -474,8 +475,8 @@ def recover_password_via_email(email: str):
         #Setting server url, port number, email sender's username and password.
         smtp_server = "smtp.gmail.com"
         smtp_port = 587
-        smtp_username = "twidder09@gmail.com"
-        smtp_password = "rytvzxgrmyzhgygz"
+        smtp_username = None    #Replace with e-mail address
+        smtp_password = None    #Replace with e-mail password (for applications)
 
         #Log in to the SMTP server.
         server = smtplib.SMTP(smtp_server, smtp_port)
