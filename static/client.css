@@ -1,0 +1,22 @@
+.message-input {
+    resize: none;
+    width: 80%;
+    height: 150px;
+}
+
+.post-wall {
+    max-height: 560px; 
+    overflow-y: auto;
+}
+
+.p-info {
+    display: inline;
+}
+
+.profile-view-tab {
+    display: none;
+}
+
+html {
+    overflow-y: scroll;
+}
