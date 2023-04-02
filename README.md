@@ -27,7 +27,13 @@ Python, Flask, Sqlite
 + Testing Using Selenium
 + Styling and Responsive Design
 + Geolocation
-+ Recover Your Password
++ Password recovery
+
+## Geolocation - configuration
+The current API key from Geoapify is required in the server.py file in order for the geolocation to work.
+
+## Password recovery - configuration
+The current e-mail username and password for SMTP is required in the server.py file for the password recovery to work.
 
 ## Selenium tests - how to configure and run them
 1. Download Microsoft Edge WebDriver https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/
